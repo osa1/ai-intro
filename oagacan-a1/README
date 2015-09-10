@@ -1,6 +1,6 @@
 This is a simple dataset of North American (though mostly U.S.) major roads.
 
-city-gps.txt contains one line per city, with three fields per line, 
+city-gps.txt contains one line per city, with three fields per line,
 delimited by spaces. The first field is the city, followed by the latitude,
 followed by the longitude.
 
