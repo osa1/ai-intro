@@ -1,5 +1,6 @@
 import copy
 import itertools
+import time
 
 ##
 ## We define names as constants to 1) minimize typos 2) faster comparsions.
@@ -222,7 +223,11 @@ def add_spaces(s, l):
 ##
 
 def main():
+    print
     current_state = State()
+
+    begin = time.clock()
+    end = None
 
     while current_state:
         found = True
@@ -233,8 +238,10 @@ def main():
                 break
 
         if found:
-            print "SOLUTION FOUND:"
+            end = time.clock()
+            print "Solution:\n"
             current_state.show()
+            print "\nSearch took " + str(end - begin) + " seconds.\n"
             return
 
 if __name__ == "__main__":
