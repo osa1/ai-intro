@@ -85,7 +85,7 @@ class State:
                          self.ordered_idx + 1,
                          0)
 
-        if self.locations_idx < len(State.locations_permutations) - 1:
+        if self.locations_idx < len(State.location_permutations) - 1:
             return State(self.locations_idx + 1,
                          0,
                          0)
@@ -104,9 +104,9 @@ class State:
         print "===================================================="
 
         for i in range(0, 5):
-            print add_spaces(self.person_at(i), 7) + " | " + \
+            print add_spaces(self.person_at(i), 7)    + " | " + \
                   add_spaces(self.location_at(i), 12) + " | " + \
-                  add_spaces(self.ordered_at(i), 12) + " | " + \
+                  add_spaces(self.ordered_at(i), 12)  + " | " + \
                   add_spaces(self.received_at(i), 12)
 
 ##
@@ -225,13 +225,17 @@ def main():
     current_state = State()
 
     while current_state:
+        found = True
         for constraint in CONSTRAINTS:
             if not constraint(current_state):
                 current_state = current_state.next_state()
+                found = False
+                break
 
-        print "SOLUTION FOUND:"
-        print current_state.show()
-        break
+        if found:
+            print "SOLUTION FOUND:"
+            current_state.show()
+            return
 
 if __name__ == "__main__":
     main()
