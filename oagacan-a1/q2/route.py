@@ -1,4 +1,7 @@
 import re
+import time
+from collections import deque
+
 
 # A city is a (name : String, latitude : Float, longitude : Float) triplet.
 # Example: ("Bloomington,_Indiana", 39.165325, -86.5263857)
@@ -81,6 +84,53 @@ def parse_roads(f):
 ##
 ##
 
+class Visited:
+    def __init__(self, what, path, cost):
+        self.what = what
+        self.path = path
+        self.cost = cost
+
+    def __str__(self):
+        return "<Visited: " + self.what + \
+                "path: " + str(self.path) + \
+                " cost: " + str(self.cost) + ">"
+
+##
+## We took advantage of duck typing and create stack and queue implementations
+## that share the same interface. This is used to implement BFS and DFS without
+## duplicating code.
+##
+
+class Stack:
+    def __init__(self):
+        self.stack = []
+
+    def push(self, item):
+        self.stack.append(item)
+
+    def pop(self):
+        return self.stack.pop()
+
+    def empty(self):
+        return len(self.stack) == 0
+
+class Queue:
+    def __init__(self):
+        self.queue = deque()
+
+    def push(self, item):
+        self.queue.append(item)
+
+    def pop(self):
+        return self.queue.popleft()
+
+    def empty(self):
+        return len(self.queue) == 0
+
+##
+##
+##
+
 class Map:
     def __init__(self, cities, roads):
         self.city_map = {}
@@ -88,7 +138,7 @@ class Map:
             existing_city = self.city_map.get(city[0])
             if existing_city and not existing_city == city[1:]:
                 raise RuntimeError(
-                        "City already existing in the database, with different lat/long.\n" + \
+                        "City already exists in the database, with different lat/long.\n" + \
                         "Existing entry: " + str(existing_city) + "\n" + \
                         "New entry: " + str(city))
             else:
@@ -97,6 +147,7 @@ class Map:
         self.road_map = {}
         for (k, v) in self.city_map.iteritems():
             self.road_map[k] = []
+            self.road_map[v[0]] = []
 
         for road in roads:
             # TODO: Maybe we need a Road class.
@@ -105,6 +156,7 @@ class Map:
             dist  = road[2]
             speed = road[3]
             name  = road[4]
+
             if self.road_map.has_key(from_):
                 self.road_map[from_].append((to, dist, speed, name))
             else:
@@ -122,9 +174,16 @@ class Map:
                 # for unknown information.
 
                 # raise RuntimeError("Found a road from nowhere: " + from_)
-                print("WARNING: Found a road from nowhere: " + from_)
+                # print("WARNING: Found a road from nowhere: " + from_)
                 self.city_map[from_] = (None, None)
                 self.road_map[from_] = [(to, dist, speed, name)]
+
+            # Roads are non-directed, so do the same from to to from_
+            if self.road_map.has_key(to):
+                self.road_map[to].append((from_, dist, speed, name))
+            else:
+                self.city_map[to] = (None, None)
+                self.road_map[to] = [(from_, dist, speed, name)]
 
     def __str__(self):
         return "<Map with " + str(len(self.city_map)) + \
@@ -138,6 +197,59 @@ class Map:
 
     def outgoing(self, city):
         return self.road_map.get(city)
+
+    def uninformed_search(self, start_city, end_city, frontier_cls, timeit=False):
+        assert start_city in self.city_map
+        assert end_city in self.city_map
+
+        if timeit:
+            begin = time.clock()
+
+        visiteds = {}
+        frontier = frontier_cls()
+        frontier.push(Visited(start_city, [], 0))
+
+        while (not frontier.empty()):
+            current = frontier.pop()
+            # print "current:", current.what
+
+            if current.what == end_city:
+                if timeit:
+                    end = time.clock()
+                    print("Search took " + str(end - begin) + " seconds.")
+
+                return current
+
+            already_visited = visiteds.get(current.what)
+            if already_visited:
+                if already_visited.cost < current.cost:
+                    continue
+
+            visiteds[current.what] = current
+
+            for outgoing_road in self.outgoing(current.what):
+                # print "adding outgoing road:", str(outgoing_road)
+                new_path = current.path[:]
+                new_path.append(outgoing_road[0])
+                frontier.push(Visited(outgoing_road[0], new_path, current.cost + 1))
+
+        if timeit:
+            end = time.clock()
+            print("Search took " + str(end - begin) + " seconds.")
+
+
+    def bfs(self, start_city, end_city, timeit=False):
+        """Runs an uninformed breadth-first search, from start_city to
+        end_city. Since the search is uninformed, we don't care about route
+        options here."""
+        return self.uninformed_search(start_city, end_city, Queue, timeit=timeit)
+
+    def dfs(self, start_city, end_city, timeit=False):
+        """Runs an uninformed depth-first search, from start_city to end_city.
+        Since the search is uninformed, we don't care about route options
+        here."""
+        return self.uninformed_search(start_city, end_city, Stack, timeit=timeit)
+
 
 ##
 ## Utilities
@@ -234,3 +346,6 @@ if __name__ == "__main__":
     m = Map(cities, roads)
     print str(m)
     print m.outgoing("Ada,_Oklahoma")
+    # print(m.bfs("Ada,_Oklahoma", "Albany,_California"))
+    # print(m.dfs("Ada,_Oklahoma", "Albany,_California", timeit=True))
+    print(m.dfs("Ada,_Oklahoma", "Ada,_Oklahoma", timeit=True))
