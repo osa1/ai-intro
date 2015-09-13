@@ -77,6 +77,11 @@ def parse_roads(f):
 
     return ret
 
+
+##
+## Utilities
+##
+
 def try_open(paths):
     for path in paths:
         try:
@@ -84,6 +89,43 @@ def try_open(paths):
         except IOError:
             continue
         return f
+
+def distance(lat1, lon1, lat2, lon2):
+    """Calculates distance between two latitude, longitude points using
+    Haversine formula. Returns in kilometers.
+
+    http://www.movable-type.co.uk/scripts/latlong.html
+    """
+    import math
+
+    r = 6371000 # metres
+
+    phi_1 = math.radians(lat1)
+    phi_2 = math.radians(lat2)
+    d_phi = math.radians(lat2 - lat1)
+    d_lam = math.radians(lon2 - lon1)
+
+    a = math.sin(d_phi / 2) * math.sin(d_phi / 2) + \
+        math.cos(phi_1) * math.cos(phi_2) * \
+        math.sin(d_lam/2) * math.sin(d_lam / 2)
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    d = r * c
+    return d
+
+def to_miles(km):
+    return km * 0.621371
+
+def distance_miles(lat1, lon1, lat2, lon2):
+    """Like 'distance', but returns in miles."""
+    # Instead of modifying a code that I don't understand(distance function,
+    # implemented from the tutorial linked in the function docs), I prefer
+    # getting the answer from it and converting it to the format I like here.
+    return to_miles(distance(lat1, lon1, lat2, lon2))
+
+##
+## Entry
+##
 
 if __name__ == "__main__":
     # In my dev env. text files are in parent directory, but assuming
@@ -120,3 +162,11 @@ if __name__ == "__main__":
 
     for road in roads:
         print road
+
+    city1 = cities[0]
+    city2 = cities[1]
+    print "==="
+    print city1
+    print city2
+
+    print(distance_miles(city1[1], city1[2], city2[1], city2[2]))
