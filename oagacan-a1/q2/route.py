@@ -28,14 +28,52 @@ def parse_roads(f):
     pattern = re.compile(
             r"^\s*([^\s]+) ([^\s]+) (\d+) (\d+) ([^\s]+)\s*$")
 
+    cant_parse = []
+
     for line in f:
         ms = re.match(pattern, line)
 
         if not ms:
-            raise RuntimeError("Can't parse road line:\n" + line)
+            cant_parse.append(line)
+        else:
+            ret.append((ms.group(1), ms.group(2),
+                int(ms.group(3)), int(ms.group(4)), ms.group(5)))
 
+    ### NOTE [Filling missing information]
+    #
+    # We have some roads with missing distance or max speeds, here how we fill
+    # those missing info:
+    #
+    # First, we assume that missing info is actually max speed and not
+    # distance, becuase when we look at the malformed lines, e.g.
+    #
+    #   Antigonish,_Nova_Scotia Tracadie,_Nova_Scotia 30  NS_104
+    #
+    # We see that there's extra space between the number and road name. This
+    # suggests that the speed was not printed, but the space after it was
+    # printed. The extra space would be between the destination and the number
+    # if it was the other way around. e.g. something like:
+    #
+    #   Antigonish,_Nova_Scotia Tracadie,_Nova_Scotia  30 NS_104
+    #
+    # Then, we take arithmetic mean of all the speeds we read from the file,
+    # and use that as speeds of those lines.
+    #
+    # The advantage of this method is that id doesn't have any effect on the
+    # algorithms, it doesn't make anything more complex. Hopefully it's not too
+    # inaccurate either.
+
+    missing_info_pattern = re.compile(
+            r"^\s*([^\s]+) ([^\s]+)\s+(\d+)\s+([^\s]+)\s*$")
+
+    average_speed = sum(map(lambda x: x[3], ret)) / len(ret)
+    # print "average_speed: ", average_speed
+
+    for line in cant_parse:
+        # print "trying to parse: " + line
+        ms = re.match(missing_info_pattern, line)
         ret.append((ms.group(1), ms.group(2),
-            int(ms.group(3)), int(ms.group(4)), ms.group(5)))
+            int(ms.group(3)), average_speed, ms.group(4)))
 
     return ret
 
