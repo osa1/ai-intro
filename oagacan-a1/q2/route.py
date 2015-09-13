@@ -57,9 +57,9 @@ def parse_roads(f):
     #   Antigonish,_Nova_Scotia Tracadie,_Nova_Scotia  30 NS_104
     #
     # Then, we take arithmetic mean of all the speeds we read from the file,
-    # and use that as speeds of those lines.
+    # and use that as speeds of missing lines.
     #
-    # The advantage of this method is that id doesn't have any effect on the
+    # The advantage of this method is that it doesn't have any effect on the
     # algorithms, it doesn't make anything more complex. Hopefully it's not too
     # inaccurate either.
 
