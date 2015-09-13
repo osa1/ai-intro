@@ -77,6 +77,67 @@ def parse_roads(f):
 
     return ret
 
+##
+##
+##
+
+class Map:
+    def __init__(self, cities, roads):
+        self.city_map = {}
+        for city in cities:
+            existing_city = self.city_map.get(city[0])
+            if existing_city and not existing_city == city[1:]:
+                raise RuntimeError(
+                        "City already existing in the database, with different lat/long.\n" + \
+                        "Existing entry: " + str(existing_city) + "\n" + \
+                        "New entry: " + str(city))
+            else:
+                self.city_map[city[0]] = (city[1], city[2])
+
+        self.road_map = {}
+        for (k, v) in self.city_map.iteritems():
+            self.road_map[k] = []
+
+        for road in roads:
+            # TODO: Maybe we need a Road class.
+            from_ = road[0]
+            to    = road[1]
+            dist  = road[2]
+            speed = road[3]
+            name  = road[4]
+            if self.road_map.has_key(from_):
+                self.road_map[from_].append((to, dist, speed, name))
+            else:
+                # This happens in two cases:
+                #
+                # - As noted in the assignment text, we have road intersection
+                #   points that are not listed in GPS file.
+                #
+                # - I also realized that there are some cities(not road
+                #   intersections) that are not listed in GPS.
+                #   (like Acton-Vale,_Quebec)
+                #
+                # I don't know how to handle those roads in search algorithms
+                # yet, but here we just add them to the database, using None
+                # for unknown information.
+
+                # raise RuntimeError("Found a road from nowhere: " + from_)
+                print("WARNING: Found a road from nowhere: " + from_)
+                self.city_map[from_] = (None, None)
+                self.road_map[from_] = [(to, dist, speed, name)]
+
+    def __str__(self):
+        return "<Map with " + str(len(self.city_map)) + \
+               " cities and " + str(self.__len_roads()) + " roads>"
+
+    def __len_roads(self):
+        ret = 0
+        for (_, v) in self.road_map.iteritems():
+            ret += len(v)
+        return ret
+
+    def outgoing(self, city):
+        return self.road_map.get(city)
 
 ##
 ## Utilities
@@ -170,3 +231,6 @@ if __name__ == "__main__":
     print city2
 
     print(distance_miles(city1[1], city1[2], city2[1], city2[2]))
+    m = Map(cities, roads)
+    print str(m)
+    print m.outgoing("Ada,_Oklahoma")
