@@ -58,10 +58,10 @@ class State:
         i3 = arr_copy[row_start + 2]
         i4 = arr_copy[row_start + 3]
 
-        arr_copy[row_start] = i4
-        arr_copy[row_start + 1] = i1
-        arr_copy[row_start + 2] = i2
-        arr_copy[row_start + 3] = i3
+        arr_copy[row_start] = i2
+        arr_copy[row_start + 1] = i3
+        arr_copy[row_start + 2] = i4
+        arr_copy[row_start + 3] = i1
 
         moves = self.moves[:]
         moves.append("left")
@@ -76,10 +76,10 @@ class State:
         i3 = arr_copy[row_start + 2]
         i4 = arr_copy[row_start + 3]
 
-        arr_copy[row_start] = i2
-        arr_copy[row_start + 1] = i3
-        arr_copy[row_start + 2] = i4
-        arr_copy[row_start + 3] = i1
+        arr_copy[row_start] = i4
+        arr_copy[row_start + 1] = i1
+        arr_copy[row_start + 2] = i2
+        arr_copy[row_start + 3] = i3
 
         moves = self.moves[:]
         moves.append("right")
@@ -120,6 +120,20 @@ class State:
 
         return State(arr_copy, moves, self.cost + 1)
 
+
+##
+## Heuristics
+##
+
+# This is the hard part. Things that I considered:
+#
+# - Manhattan distances of pieces to their correct locations:
+#   A naive version would not be admissible, for example, if we have a line
+#   like this:
+#
+#     4 1 2 3
+#
+#   Cost should be 1, not 4.
 
 def brute_bfs(state0):
     """Brute-force breadth-first search implementation. Uses memoization to
@@ -199,6 +213,10 @@ def brute_dfs(state0):
 
     return None
 
+def h1(state):
+    """Manhattan distances of pieces to their correct locations."""
+    pass
+
 def solved(state):
     """Return whether the problem is solved."""
     return state.arr == range(1, 17)
@@ -220,3 +238,12 @@ if __name__ == "__main__":
     print s
     #print s.left(1).left(1).right(1).right(1)
     print s.up(3).down(3).up(3).up(3).down(3).down(3)
+    print (s == s.up(3))
+    print (s == s.up(3).down(3))
+    print (s != s.up(3))
+    print (s != s.up(3).down(3))
+    brute_dfs(s)
+
+    print hash(s)
+    print hash(s.up(1))
+    print hash(s.up(1).down(1))
