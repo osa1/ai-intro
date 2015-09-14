@@ -370,20 +370,19 @@ class Map:
 
                 current_city_obj = self.city_map[current.what]
 
-                f = current.cost + \
-                        cost_fn(current_city_obj, next_city_obj, outgoing_road) + \
-                        heuristic(end_city_obj, current_city_obj,
-                                next_city_obj, outgoing_road, current.path)
+                actual_cost = current.cost + cost_fn(current_city_obj, next_city_obj, outgoing_road)
+                f = actual_cost + heuristic(
+                        end_city_obj, current_city_obj, next_city_obj, outgoing_road, current.path)
 
                 next_city_visited = visiteds.get(next_city)
                 if next_city_visited:
-                    if next_city_visited.cost <= f:
+                    if next_city_visited.cost <= actual_cost:
                         continue
 
                 new_path = current.path[:]
                 new_path.append((next_city_obj, outgoing_road))
 
-                heappush(pq, (f, Visited(next_city, new_path, f)))
+                heappush(pq, (f, Visited(next_city, new_path, actual_cost)))
 
         if timeit:
             end = time.clock()
