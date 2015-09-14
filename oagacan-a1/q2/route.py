@@ -320,7 +320,8 @@ class Map:
 
     def astar(self, start_city, end_city, heuristic, timeit=False):
         assert start_city in self.city_map
-        assert end_city in self.city_map
+        end_city_obj = self.city_map.get(end_city)
+        assert end_city_obj
 
         # I'd prefer a heap class with it's own methods...
         from heapq import heappush, heappop
@@ -347,7 +348,7 @@ class Map:
             for outgoing_road in self.outgoing(current.what):
                 next_city = outgoing_road.to
                 next_city_obj = self.city_map[next_city]
-                f = current.cost + heuristic(end_city, next_city_obj, outgoing_road)
+                f = current.cost + heuristic(end_city_obj, next_city_obj, outgoing_road)
 
                 next_city_visited = visiteds.get(next_city)
                 if next_city_visited:
@@ -364,10 +365,10 @@ class Map:
             print("Search took " + str(end - begin) + " seconds.")
 
 
-def heuristic_constant(target_name, next_city, road):
+def heuristic_constant(target_city, next_city, road):
     """A heuristic that assigns same cost to every node(except the target,
     which is assigned 0). Effectively this makes A* same as BFS."""
-    if target_name == next_city.name:
+    if target_city.name == next_city.name:
         return 0
     return 1
 
