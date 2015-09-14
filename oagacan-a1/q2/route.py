@@ -329,7 +329,7 @@ class Map:
         here."""
         return self.uninformed_search(start_city, end_city, Stack, timeit=timeit)
 
-    def astar(self, start_city, end_city, heuristic, timeit=False):
+    def astar(self, start_city, end_city, heuristic, cost_fn, timeit=False):
         assert start_city in self.city_map
         end_city_obj = self.city_map.get(end_city)
         assert end_city_obj
@@ -366,6 +366,7 @@ class Map:
                 #             current_city, target_city_obj, current.path)
 
                 f = current.cost + \
+                        cost_fn(current_city_obj, next_city_obj, outgoing_road) + \
                         heuristic(end_city_obj, current_city_obj,
                                 next_city_obj, outgoing_road, current.path)
 
@@ -438,8 +439,27 @@ def heuristic_straight_line(current_city, next_city, target_city, road, visiteds
     # Hopefully this is what we use most of the time.
     return distance_miles(target_city.lat, target_city.long, next_city.lat, next_city.long)
 
+################################################################################
+## Cost functions
 
-##
+# Cost functions calculate cost of moving from one node to another node, using
+# the given road.
+
+# NOTE: Currently they're more general than needed. For this assignment all we
+# need to know in cost functions is the road used, but no big deal.
+
+def cost_distance(current_city, next_city, used_road):
+    """Use when the cost is the distance we take."""
+    return used_road.distance
+
+def cost_segments(current_city, next_city, used_road):
+    """Use when the cost is amount of turns we make."""
+    return 1
+
+def cost_time(current_city, next_city, used_road):
+    """Use when the cost is total time spent on the road."""
+    return used_road.distance / used_road.max_speed
+
 ## Utilities
 ##
 
