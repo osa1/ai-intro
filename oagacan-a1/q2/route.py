@@ -2,6 +2,9 @@ import re
 import time
 from collections import deque
 
+################################################################################
+## Parsers
+
 def parse_city_gps(f):
     """Parse city gps file from given file object."""
     ret = []
@@ -113,9 +116,12 @@ def parse_map():
 
     return Map(cities, roads)
 
-##
-##
-##
+################################################################################
+## Some intermediate data structures
+
+# We took advantage of duck typing and create stack and queue implementations
+# that share the same interface. This is used to implement BFS and DFS without
+# duplicating code.
 
 class Visited:
     def __init__(self, what, path, cost):
@@ -134,11 +140,6 @@ class Visited:
     def __repr__(self):
         return self.__str__()
 
-##
-## We took advantage of duck typing and create stack and queue implementations
-## that share the same interface. This is used to implement BFS and DFS without
-## duplicating code.
-##
 
 class Stack:
     def __init__(self):
@@ -153,6 +154,7 @@ class Stack:
     def empty(self):
         return len(self.stack) == 0
 
+
 class Queue:
     def __init__(self):
         self.queue = deque()
@@ -166,9 +168,6 @@ class Queue:
     def empty(self):
         return len(self.queue) == 0
 
-##
-##
-##
 
 class Road:
     def __init__(self, from_, to, distance, max_speed, name):
@@ -211,6 +210,9 @@ class City:
     def __repr__(self):
         return self.__str__()
 
+
+################################################################################
+## Main class, implements search algorithms
 
 # TODO: Remove maps by actually linking cities together, using roads.
 
@@ -385,6 +387,9 @@ class Map:
             print("Search took " + str(end - begin) + " seconds.")
 
 
+################################################################################
+## Heuristics
+
 def heuristic_constant(current_city, next_city, target_city, road, visiteds):
     """A heuristic that assigns same cost to every node(except the target,
     which is assigned 0). Effectively this makes A* same as BFS."""
@@ -460,8 +465,8 @@ def cost_time(current_city, next_city, used_road):
     """Use when the cost is total time spent on the road."""
     return used_road.distance / used_road.max_speed
 
+################################################################################
 ## Utilities
-##
 
 def try_open(paths):
     for path in paths:
@@ -504,25 +509,25 @@ def distance_miles(lat1, lon1, lat2, lon2):
     # getting the answer from it and converting it to the format I like here.
     return to_miles(distance(lat1, lon1, lat2, lon2))
 
-##
+################################################################################
 ## Entry
-##
 
 if __name__ == "__main__":
     m = parse_map()
 
-    # bfs_solution = m.bfs("Ada,_Oklahoma", "Albany,_California", timeit=True)
-    # astar_solution = m.astar("Ada,_Oklahoma", "Albany,_California", heuristic_constant, timeit=True)
-    astar_straight_line = \
-        m.astar("Ada,_Oklahoma", "Albany,_California", heuristic_straight_line, timeit=True)
+    bfs_solution = m.bfs("Ada,_Oklahoma", "Albany,_California", timeit=True)
+    astar_solution = m.astar(
+            "Ada,_Oklahoma", "Albany,_California", heuristic_constant, cost_distance, timeit=True)
+    # astar_straight_line = \
+    #     m.astar("Ada,_Oklahoma", "Albany,_California", heuristic_straight_line, timeit=True)
 
-    # print(len(bfs_solution.path))
-    # print(len(astar_solution.path))
-    # print(bfs_solution.cost)
-    # print(astar_solution.cost)
+    print(len(bfs_solution.path))
+    print(len(astar_solution.path))
+    print(bfs_solution.cost)
+    print(astar_solution.cost)
     # print bfs_solution
     # print astar_solution
-    print astar_straight_line
+    # print astar_straight_line
 
     # m.bfs("Ada,_Oklahoma", "Albany,_California", timeit=True)
     # m.astar("Ada,_Oklahoma", "Albany,_California", heuristic_constant, timeit=True)
