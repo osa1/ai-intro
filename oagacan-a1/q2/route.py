@@ -125,7 +125,7 @@ class Visited:
 
     def __str__(self):
         return "<Visited: " + self.what + \
-                "path: " + str(self.path) + \
+                " path: " + str(self.path) + \
                 " cost: " + str(self.cost) + ">"
 
 ##
