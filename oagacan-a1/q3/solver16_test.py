@@ -94,5 +94,14 @@ class TestMoveMethods(unittest.TestCase):
             answer = solver16.brute_bfs(state)
             self.assertIsNotNone(answer)
 
+
+    def test_swap_2x2(self):
+        begin = [3, 2, 1, 4]
+        state = solver16.State(begin)
+        answer = solver16.brute_bfs(state)
+        print answer
+        print
+        self.assertIsNotNone(answer)
+
 if __name__ == "__main__":
     unittest.main()
