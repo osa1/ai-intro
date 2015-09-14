@@ -183,7 +183,7 @@ class Road:
     def __str__(self):
         return "<Road " + self.name + " from: " + self.from_ + \
                 " to: " + self.to + " distance: " + str(self.distance) + \
-                "speed limit: " + str(self.max_speed) + ">"
+                " speed limit: " + str(self.max_speed) + ">"
 
     def __repr__(self):
         return self.__str__()
