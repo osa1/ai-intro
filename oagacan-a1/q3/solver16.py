@@ -122,9 +122,8 @@ class State:
         return State(arr_copy, self.size, moves, self.cost + 1)
 
 
-##
+################################################################################
 ## Heuristics
-##
 
 # This is the hard part. Things that I considered:
 #
@@ -221,6 +220,9 @@ def h1(state):
 def solved(state):
     """Return whether the problem is solved."""
     return state.arr == range(1, state.size * state.size + 1)
+
+################################################################################
+## Entry
 
 def parse_state(f):
     arr = []
