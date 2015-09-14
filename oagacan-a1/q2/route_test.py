@@ -20,7 +20,7 @@ class TestMoveMethods(unittest.TestCase):
 
     def test_astar_constant(self):
         test = ("Yankton,_South_Dakota", "Bigfork,_Montana")
-        astar_result = self.m.astar(test[0], test[1], route.heuristic_constant)
+        astar_result = self.m.astar(test[0], test[1], route.heuristic_constant, route.cost_segments)
         self.assertIsNotNone(astar_result)
         bfs_result = self.m.bfs(test[0], test[1])
         self.assertIsNotNone(bfs_result)
