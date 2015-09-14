@@ -187,6 +187,14 @@ class City:
         self.lat = lat
         self.long = long
 
+    def __eq__(self, other):
+        return self.name == other.name and \
+                self.lat == other.lat and \
+                self.long == other.long
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __str__(self):
         return "<City " + self.name + " latitude: " + str(self.lat) + \
                 " longitude: " + str(self.long) + ">"
@@ -197,8 +205,7 @@ class Map:
         self.city_map = {}
         for city in cities:
             existing_city = self.city_map.get(city.name)
-            if existing_city and \
-                    not (existing_city.lat == city.lat and existing_city.long == city.long):
+            if existing_city and existing_city != city:
                 raise RuntimeError(
                         "City already exists in the database, with different lat/long.\n" + \
                         "Existing entry: " + str(existing_city) + "\n" + \
