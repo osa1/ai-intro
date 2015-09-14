@@ -1,4 +1,5 @@
 import sys
+import math
 from collections import deque
 
 # NOTE: Ideally I would implement wrapper classes for adding moves and costs,
@@ -8,9 +9,13 @@ from collections import deque
 # won't be able to have the current implementation, can't have both.
 
 class State:
-    def __init__(self, arr, moves=[], cost=0):
-        assert arr and len(arr) == 16
+    # NOTE: It turns out keyword arguments suck. Try to guess what happens when
+    # you call this constructor like:
+    #
+    #   State([], [])
+    def __init__(self, arr, size=None, moves=[], cost=0):
         self.arr = arr
+        self.size = size if size else int(math.sqrt(len(arr)))
         self.hash = State.hash(arr)
         self.moves = moves
         self.cost = cost
@@ -29,10 +34,10 @@ class State:
 
     def __str__(self):
         grid = []
-        for row in range(0, 4):
+        for row in range(self.size):
             line = []
-            for col in range(0, 4):
-                line.append(self.arr[row * 4 + col])
+            for col in range(self.size):
+                line.append(self.arr[row * self.size + col])
             grid.append(line)
         return "State(" + str(grid) + "," \
                         + "cost=" + str(self.cost) \
@@ -52,73 +57,68 @@ class State:
 
     def left(self, row):
         arr_copy = self.arr[:]
-        row_start = 4 * row
-        i1 = arr_copy[row_start]
-        i2 = arr_copy[row_start + 1]
-        i3 = arr_copy[row_start + 2]
-        i4 = arr_copy[row_start + 3]
 
-        arr_copy[row_start] = i2
-        arr_copy[row_start + 1] = i3
-        arr_copy[row_start + 2] = i4
-        arr_copy[row_start + 3] = i1
+        row_start = self.size * row
+        temps = []
+
+        for i in range(self.size):
+            temps.append(arr_copy[row_start + i])
+
+        for i in range(self.size):
+            arr_copy[row_start + i] = temps[(i + 1) % self.size]
 
         moves = self.moves[:]
         moves.append("left")
 
-        return State(arr_copy, moves, self.cost + 1)
+        return State(arr_copy, self.size, moves, self.cost + 1)
 
     def right(self, row):
         arr_copy = self.arr[:]
         row_start = 4 * row
-        i1 = arr_copy[row_start]
-        i2 = arr_copy[row_start + 1]
-        i3 = arr_copy[row_start + 2]
-        i4 = arr_copy[row_start + 3]
+        temps = []
 
-        arr_copy[row_start] = i4
-        arr_copy[row_start + 1] = i1
-        arr_copy[row_start + 2] = i2
-        arr_copy[row_start + 3] = i3
+        for i in range(self.size):
+            temps.append(arr_copy[row_start + i])
+
+        for i in range(self.size):
+            arr_copy[row_start + i] = temps[(3 + i) % self.size]
 
         moves = self.moves[:]
         moves.append("right")
 
-        return State(arr_copy, moves, self.cost + 1)
+        return State(arr_copy, self.size, moves, self.cost + 1)
 
     def up(self, col):
         arr_copy = self.arr[:]
-        i1 = arr_copy[col]
-        i2 = arr_copy[col + 4]
-        i3 = arr_copy[col + 8]
-        i4 = arr_copy[col + 12]
 
-        arr_copy[col] = i2
-        arr_copy[col + 4] = i3
-        arr_copy[col + 8] = i4
-        arr_copy[col + 12] = i1
+        temps = []
+
+        for i in range(self.size):
+            temps.append(arr_copy[col + self.size * i])
+
+        for i in range(self.size):
+            arr_copy[col + self.size * i] = temps[(i + 1) % self.size]
 
         moves = self.moves[:]
         moves.append("up")
 
-        return State(arr_copy, moves, self.cost + 1)
+        return State(arr_copy, self.size, moves, self.cost + 1)
 
     def down(self, col):
         arr_copy = self.arr[:]
-        i1 = arr_copy[col]
-        i2 = arr_copy[col + 4]
-        i3 = arr_copy[col + 8]
-        i4 = arr_copy[col + 12]
 
-        arr_copy[col] = i4
-        arr_copy[col + 4] = i1
-        arr_copy[col + 8] = i2
-        arr_copy[col + 12] = i3
+        temps = []
+
+        for i in range(self.size):
+            temps.append(arr_copy[col + self.size * i])
+
+        for i in range(self.size):
+            arr_copy[col + self.size * i] = temps[(3 + i) % self.size]
 
         moves = self.moves[:]
         moves.append("down")
 
-        return State(arr_copy, moves, self.cost + 1)
+        return State(arr_copy, self.size, moves, self.cost + 1)
 
 
 ##
@@ -227,23 +227,12 @@ def parse_state(f):
         for i in line.split():
             arr.append(int(i))
 
-    if len(arr) != 16:
-        raise RuntimeError("Parsing wrong number of ints. " +
-                           "Are you sure the file has correct format?")
+    size = math.sqrt(len(arr))
 
-    return State(arr)
+    if not size.is_integer():
+        raise RuntimeError("Malformed input file. Size of the grid should be a square.")
+
+    return State(arr, size)
 
 if __name__ == "__main__":
     s = parse_state(open(sys.argv[1], "r"))
-    print s
-    #print s.left(1).left(1).right(1).right(1)
-    print s.up(3).down(3).up(3).up(3).down(3).down(3)
-    print (s == s.up(3))
-    print (s == s.up(3).down(3))
-    print (s != s.up(3))
-    print (s != s.up(3).down(3))
-    brute_dfs(s)
-
-    print hash(s)
-    print hash(s.up(1))
-    print hash(s.up(1).down(1))
