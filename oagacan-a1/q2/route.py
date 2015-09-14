@@ -121,6 +121,9 @@ class Visited:
     def __init__(self, what, path, cost):
         self.what = what
         self.path = path
+
+        # NOTE: This is total cost up to this point, not the cost of moving to
+        # this point from previous point.
         self.cost = cost
 
     def __str__(self):
