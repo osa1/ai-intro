@@ -209,7 +209,7 @@ class Map:
         frontier = frontier_cls()
         frontier.push(Visited(start_city, [], 0))
 
-        while (not frontier.empty()):
+        while not frontier.empty():
             current = frontier.pop()
             # print "current:", current.what
 
@@ -237,7 +237,6 @@ class Map:
             end = time.clock()
             print("Search took " + str(end - begin) + " seconds.")
 
-
     def bfs(self, start_city, end_city, timeit=False):
         """Runs an uninformed breadth-first search, from start_city to
         end_city. Since the search is uninformed, we don't care about route
@@ -249,6 +248,48 @@ class Map:
         Since the search is uninformed, we don't care about route options
         here."""
         return self.uninformed_search(start_city, end_city, Stack, timeit=timeit)
+
+    def astar(self, start_city, end_city, heuristic, timeit=False):
+        assert start_city in self.city_map
+        assert end_city in self.city_map
+
+        # I'd prefer a heap class with it's own methods...
+        from heapq import heappush, heappop
+
+        pq = [(0, Visited(start_city, [], 0))]
+
+        visiteds = {}
+
+        while len(pq) != 0:
+            current = heappop(pq)[1]
+
+            if current.what == end_city:
+                return current
+
+            visiteds[current.what] = current
+
+            for outgoing_road in self.outgoing(current.what):
+                next_city = outgoing_road[0]
+                next_city_cost = current.cost + outgoing_road[2]
+
+                next_city_visited = visiteds.get(next_city)
+                if next_city_visited:
+                    if next_city_visited.cost <= next_city_cost:
+                        continue
+
+                new_path = current.path[:]
+                new_path.append(next_city)
+
+                next_city_obj = self.city_map[next_city]
+
+                f = current.cost + heuristic(end_city, next_city, next_city_obj)
+                heappush(pq, (f, Visited(next_city, new_path, next_city_cost)))
+
+
+def heuristic_constant(target, next, (next_lat, next_long)):
+    if target == next:
+        return 0
+    return 1
 
 
 ##
@@ -345,7 +386,8 @@ if __name__ == "__main__":
     print(distance_miles(city1[1], city1[2], city2[1], city2[2]))
     m = Map(cities, roads)
     print str(m)
-    print m.outgoing("Ada,_Oklahoma")
-    # print(m.bfs("Ada,_Oklahoma", "Albany,_California"))
-    # print(m.dfs("Ada,_Oklahoma", "Albany,_California", timeit=True))
-    print(m.dfs("Ada,_Oklahoma", "Ada,_Oklahoma", timeit=True))
+    # print m.outgoing("Ada,_Oklahoma")
+    print(m.bfs("Ada,_Oklahoma", "Albany,_California"))
+    print(m.astar("Ada,_Oklahoma", "Albany,_California", heuristic_constant, timeit=True))
+    # print(m.dfs("Ada,_Oklahoma", "Ada,_Oklahoma", timeit=True))
+    # print(m.astar("Ada,_Oklahoma", "Ada,_Oklahoma", heuristic_constant, timeit=True))
