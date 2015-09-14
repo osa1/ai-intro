@@ -2,8 +2,6 @@ import re
 import time
 from collections import deque
 
-# A city is a (name : String, latitude : Float, longitude : Float) triplet.
-# Example: ("Bloomington,_Indiana", 39.165325, -86.5263857)
 def parse_city_gps(f):
     """Parse city gps file from given file object."""
     ret = []
@@ -19,12 +17,10 @@ def parse_city_gps(f):
         if not ms:
             raise RuntimeError("Can't parse city line:\n" + line)
 
-        ret.append((ms.group(1), float(ms.group(2)), float(ms.group(3))))
+        ret.append(City(ms.group(1), float(ms.group(2)), float(ms.group(3))))
 
     return ret
 
-# A road is (from : String, to : String, distance : Int, max_speed : Int,
-# road_name : String) tuple.
 def parse_roads(f):
     ret = []
     pattern = re.compile(
@@ -185,23 +181,34 @@ class Road:
                 "speed limit: " + str(max_speed) + ">"
 
 
+class City:
+    def __init__(self, name, lat, long):
+        self.name = name
+        self.lat = lat
+        self.long = long
+
+    def __str__(self):
+        return "<City " + self.name + " latitude: " + str(self.lat) + \
+                " longitude: " + str(self.long) + ">"
+
+
 class Map:
     def __init__(self, cities, roads):
         self.city_map = {}
         for city in cities:
-            existing_city = self.city_map.get(city[0])
-            if existing_city and not existing_city == city[1:]:
+            existing_city = self.city_map.get(city.name)
+            if existing_city and \
+                    not (existing_city.lat == city.lat and existing_city.long == city.long):
                 raise RuntimeError(
                         "City already exists in the database, with different lat/long.\n" + \
                         "Existing entry: " + str(existing_city) + "\n" + \
                         "New entry: " + str(city))
             else:
-                self.city_map[city[0]] = (city[1], city[2])
+                self.city_map[city.name] = city
 
         self.road_map = {}
-        for (k, v) in self.city_map.iteritems():
-            self.road_map[k] = []
-            self.road_map[v[0]] = []
+        for city in cities:
+            self.road_map[city.name] = []
 
         for road in roads:
             # TODO: Maybe we need a Road class.
@@ -226,14 +233,14 @@ class Map:
 
                 # raise RuntimeError("Found a road from nowhere: " + from_)
                 # print("WARNING: Found a road from nowhere: " + from_)
-                self.city_map[from_] = (None, None)
+                self.city_map[from_] = City(from_, None, None)
                 self.road_map[from_] = [road]
 
             # Roads are non-directed, so do the same from to to from_
             if self.road_map.has_key(to):
                 self.road_map[to].append(road.invert())
             else:
-                self.city_map[to] = (None, None)
+                self.city_map[to] = City(to, None, None)
                 self.road_map[to] = [road.invert()]
 
     def __str__(self):
@@ -332,7 +339,7 @@ class Map:
 
             for outgoing_road in self.outgoing(current.what):
                 next_city = outgoing_road.to
-                next_city_cost = current.cost + outgoing_road[2]
+                next_city_cost = current.cost + outgoing_road.distance
 
                 next_city_visited = visiteds.get(next_city)
                 if next_city_visited:
@@ -344,7 +351,7 @@ class Map:
 
                 next_city_obj = self.city_map[next_city]
 
-                f = current.cost + heuristic(end_city, next_city, next_city_obj)
+                f = current.cost + heuristic(end_city, next_city_obj, outgoing_road)
                 heappush(pq, (f, Visited(next_city, new_path, next_city_cost)))
 
         if timeit:
@@ -352,10 +359,10 @@ class Map:
             print("Search took " + str(end - begin) + " seconds.")
 
 
-def heuristic_constant(target, next, (next_lat, next_long)):
+def heuristic_constant(target_name, next_city, road):
     """A heuristic that assigns same cost to every node(except the target,
     which is assigned 0). Effectively this makes A* same as BFS."""
-    if target == next:
+    if target_name == next_city.name:
         return 0
     return 1
 
