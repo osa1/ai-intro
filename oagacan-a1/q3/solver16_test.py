@@ -97,13 +97,13 @@ class TestMoveMethods(unittest.TestCase):
             # print
             self.assertIsNotNone(answer)
 
-    # def test_swap_3x3(self):
-    #     begin = [1, 6, 3, 4, 5, 2, 7, 8, 9]
-    #     state = solver16.State(begin)
-    #     answer = solver16.brute_bfs(state)
-    #     print answer
-    #     print
-    #     self.assertIsNotNone(answer)
+    def test_swap_3x3(self):
+        begin = [1, 6, 3, 4, 5, 2, 7, 8, 9]
+        state = solver16.State(begin)
+        answer = solver16.astar(state, solver16.h1)
+        print answer
+        print
+        self.assertIsNotNone(answer)
 
     def test_swap_2x2(self):
         begin = [3, 2, 1, 4]
@@ -112,6 +112,14 @@ class TestMoveMethods(unittest.TestCase):
         # print answer
         # print
         self.assertIsNotNone(answer)
+
+    def test_astar_2x2(self):
+        import itertools
+        perms = map(list, list(itertools.permutations([1, 2, 3, 4])))
+        for perm in perms:
+            state = solver16.State(perm)
+            answer = solver16.astar(state, solver16.h1)
+            self.assertIsNotNone(answer)
 
     # def test_one_move(self):
     #     begin = [1, 2, 4, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]

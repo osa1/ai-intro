@@ -146,21 +146,10 @@ def brute_bfs(state0):
             return state
 
         for i in range(state.size):
-            next_state = state.up(i)
-            if next_state not in memo:
-                queue.append(next_state)
-
-            next_state = state.left(i)
-            if next_state not in memo:
-                queue.append(next_state)
-
-            next_state = state.down(i)
-            if next_state not in memo:
-                queue.append(next_state)
-
-            next_state = state.right(i)
-            if next_state not in memo:
-                queue.append(next_state)
+            for meth in [State.right, State.down, State.left, State.up]:
+                next_state = meth(state, i)
+                if next_state not in memo:
+                    queue.append(next_state)
 
     return None
 
@@ -204,30 +193,52 @@ def brute_dfs(state0):
             return state
 
         for i in range(state.size):
-            next_state = state.up(i)
-            if next_state not in memo:
-                stack.append(next_state)
-
-            next_state = state.left(i)
-            if next_state not in memo:
-                stack.append(next_state)
-
-            next_state = state.down(i)
-            if next_state not in memo:
-                stack.append(next_state)
-
-            next_state = state.right(i)
-            if next_state not in memo:
-                stack.append(next_state)
+            for meth in [State.down, State.right, State.up, State.left]:
+                next_state = meth(state, i)
+                if next_state not in memo:
+                    stack.append(next_state)
 
     return None
+
+################################################################################
+## A*
+
+def astar(state0, heuristic):
+    from heapq import heappush, heappop
+
+    pq = [(0, state0)]
+
+    memo = {}
+
+    while len(pq) != 0:
+        current = heappop(pq)[1]
+
+        if current.solved():
+            return current
+
+        memo[current] = current
+
+        for i in range(current.size):
+            for meth in [State.down, State.right, State.up, State.left]:
+                next_state = meth(current, i)
+
+                next_state_seen = memo.get(next_state)
+                if next_state_seen:
+                    if next_state_seen.cost <= current.cost + 1:
+                        continue
+
+                heappush(pq, (current.cost + heuristic(next_state), next_state))
 
 ################################################################################
 ## Heuristics
 
 def h1(state):
-    """Manhattan distances of pieces to their correct locations."""
-    pass
+    """Number of misplaced numbers."""
+    misplaced = 0
+    for i in range(state.size * state.size):
+        if state.arr[i] != i + 1:
+            misplaced += 1
+    return misplaced
 
 ################################################################################
 ## Entry
