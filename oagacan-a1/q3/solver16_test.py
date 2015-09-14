@@ -86,5 +86,13 @@ class TestMoveMethods(unittest.TestCase):
             self.assertEqual(self.state, self.state.right(i).left(i))
             self.assertEqual(self.state, self.state.up(i).down(i))
 
+    def test_4x4(self):
+        import itertools
+        perms = map(list, list(itertools.permutations([1, 2, 3, 4])))
+        for perm in perms:
+            state = solver16.State(perm)
+            answer = solver16.brute_bfs(state)
+            self.assertIsNotNone(answer)
+
 if __name__ == "__main__":
     unittest.main()

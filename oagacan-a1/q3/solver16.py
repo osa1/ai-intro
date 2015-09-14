@@ -74,14 +74,14 @@ class State:
 
     def right(self, row):
         arr_copy = self.arr[:]
-        row_start = 4 * row
+        row_start = self.size * row
         temps = []
 
         for i in range(self.size):
             temps.append(arr_copy[row_start + i])
 
         for i in range(self.size):
-            arr_copy[row_start + i] = temps[(3 + i) % self.size]
+            arr_copy[row_start + i] = temps[(self.size - 1 + i) % self.size]
 
         moves = self.moves[:]
         moves.append("right")
@@ -89,6 +89,7 @@ class State:
         return State(arr_copy, self.size, moves, self.cost + 1)
 
     def up(self, col):
+
         arr_copy = self.arr[:]
 
         temps = []
@@ -113,7 +114,7 @@ class State:
             temps.append(arr_copy[col + self.size * i])
 
         for i in range(self.size):
-            arr_copy[col + self.size * i] = temps[(3 + i) % self.size]
+            arr_copy[col + self.size * i] = temps[(self.size - 1 + i) % self.size]
 
         moves = self.moves[:]
         moves.append("down")
@@ -157,7 +158,7 @@ def brute_bfs(state0):
         if solved(state):
             return state
 
-        for i in range(4):
+        for i in range(state.size):
             queue.append(state.up(i))
             queue.append(state.down(i))
             queue.append(state.left(i))
@@ -205,7 +206,7 @@ def brute_dfs(state0):
         if solved(state):
             return state
 
-        for i in range(4):
+        for i in range(state.size):
             stack.append(state.up(i))
             stack.append(state.down(i))
             stack.append(state.left(i))
@@ -219,7 +220,7 @@ def h1(state):
 
 def solved(state):
     """Return whether the problem is solved."""
-    return state.arr == range(1, 17)
+    return state.arr == range(1, state.size * state.size + 1)
 
 def parse_state(f):
     arr = []
