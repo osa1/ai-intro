@@ -143,25 +143,31 @@ def brute_bfs(state0):
 
     queue = deque([state0])
     memo  = set()
-    # mems  = 0
 
     while len(queue) != 0:
         state = queue.popleft()
-        if state in memo:
-            # print("found memoized state(" + str(mems) + ")")
-            # mems += 1
-            continue
-        # print "processing new state"
 
         memo.add(state)
+
         if solved(state):
             return state
 
         for i in range(state.size):
-            queue.append(state.up(i))
-            queue.append(state.down(i))
-            queue.append(state.left(i))
-            queue.append(state.right(i))
+            next_state = state.up(i)
+            if next_state not in memo:
+                queue.append(next_state)
+
+            next_state = state.left(i)
+            if next_state not in memo:
+                queue.append(next_state)
+
+            next_state = state.down(i)
+            if next_state not in memo:
+                queue.append(next_state)
+
+            next_state = state.right(i)
+            if next_state not in memo:
+                queue.append(next_state)
 
     return None
 
@@ -198,18 +204,28 @@ def brute_dfs(state0):
 
     while len(stack) != 0:
         state = stack.pop()
-        if state in memo:
-            continue
 
         memo.add(state)
+
         if solved(state):
             return state
 
         for i in range(state.size):
-            stack.append(state.up(i))
-            stack.append(state.down(i))
-            stack.append(state.left(i))
-            stack.append(state.right(i))
+            next_state = state.up(i)
+            if next_state not in memo:
+                stack.append(next_state)
+
+            next_state = state.left(i)
+            if next_state not in memo:
+                stack.append(next_state)
+
+            next_state = state.down(i)
+            if next_state not in memo:
+                stack.append(next_state)
+
+            next_state = state.right(i)
+            if next_state not in memo:
+                stack.append(next_state)
 
     return None
 
