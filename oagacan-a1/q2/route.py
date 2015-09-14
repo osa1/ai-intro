@@ -301,17 +301,14 @@ class Map:
             for outgoing_road in self.outgoing(current.what):
                 # print "adding outgoing road:", str(outgoing_road)
                 next_city = outgoing_road.to
-                next_city_cost = current.cost + 1
 
-                next_city_visited = visiteds.get(next_city)
-                if next_city_visited:
-                    if next_city_visited.cost <= next_city_cost:
-                        continue
+                if visiteds.has_key(next_city):
+                    continue
 
                 new_path = current.path[:]
                 new_path.append((next_city, outgoing_road))
 
-                frontier.push(Visited(next_city, new_path, next_city_cost))
+                frontier.push(Visited(next_city, new_path, 0))
 
         if timeit:
             end = time.clock()
