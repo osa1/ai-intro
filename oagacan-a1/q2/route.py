@@ -38,7 +38,7 @@ def parse_roads(f):
         if not ms:
             cant_parse.append(line)
         else:
-            ret.append((ms.group(1), ms.group(2),
+            ret.append(Road(ms.group(1), ms.group(2),
                 int(ms.group(3)), int(ms.group(4)), ms.group(5)))
 
     ### NOTE [Filling missing information]
@@ -68,13 +68,13 @@ def parse_roads(f):
     missing_info_pattern = re.compile(
             r"^\s*([^\s]+) ([^\s]+)\s+(\d+)\s+([^\s]+)\s*$")
 
-    average_speed = sum(map(lambda x: x[3], ret)) / len(ret)
+    average_speed = sum(map(lambda x: x.max_speed, ret)) / len(ret)
     # print "average_speed: ", average_speed
 
     for line in cant_parse:
         # print "trying to parse: " + line
         ms = re.match(missing_info_pattern, line)
-        ret.append((ms.group(1), ms.group(2),
+        ret.append(Road(ms.group(1), ms.group(2),
             int(ms.group(3)), average_speed, ms.group(4)))
 
     return ret
@@ -168,6 +168,23 @@ class Queue:
 ##
 ##
 
+class Road:
+    def __init__(self, from_, to, distance, max_speed, name):
+        self.from_ = from_
+        self.to = to
+        self.distance = distance
+        self.max_speed = max_speed
+        self.name = name
+
+    def invert(self):
+        return Road(self.to, self.from_, self.distance, self.max_speed, self.name)
+
+    def __str__(self):
+        return "<Road " + name + " from: " + from_ + \
+                " to: " + to + " distance: " + str(distance) + \
+                "speed limit: " + str(max_speed) + ">"
+
+
 class Map:
     def __init__(self, cities, roads):
         self.city_map = {}
@@ -188,14 +205,11 @@ class Map:
 
         for road in roads:
             # TODO: Maybe we need a Road class.
-            from_ = road[0]
-            to    = road[1]
-            dist  = road[2]
-            speed = road[3]
-            name  = road[4]
+            from_ = road.from_
+            to = road.to
 
             if self.road_map.has_key(from_):
-                self.road_map[from_].append((to, dist, speed, name))
+                self.road_map[from_].append(road)
             else:
                 # This happens in two cases:
                 #
@@ -213,14 +227,14 @@ class Map:
                 # raise RuntimeError("Found a road from nowhere: " + from_)
                 # print("WARNING: Found a road from nowhere: " + from_)
                 self.city_map[from_] = (None, None)
-                self.road_map[from_] = [(to, dist, speed, name)]
+                self.road_map[from_] = [road]
 
             # Roads are non-directed, so do the same from to to from_
             if self.road_map.has_key(to):
-                self.road_map[to].append((from_, dist, speed, name))
+                self.road_map[to].append(road.invert())
             else:
                 self.city_map[to] = (None, None)
-                self.road_map[to] = [(from_, dist, speed, name)]
+                self.road_map[to] = [road.invert()]
 
     def __str__(self):
         return "<Map with " + str(len(self.city_map)) + \
@@ -261,7 +275,7 @@ class Map:
 
             for outgoing_road in self.outgoing(current.what):
                 # print "adding outgoing road:", str(outgoing_road)
-                next_city = outgoing_road[0]
+                next_city = outgoing_road.to
                 next_city_cost = current.cost + 1
 
                 next_city_visited = visiteds.get(next_city)
@@ -317,7 +331,7 @@ class Map:
                 return current
 
             for outgoing_road in self.outgoing(current.what):
-                next_city = outgoing_road[0]
+                next_city = outgoing_road.to
                 next_city_cost = current.cost + outgoing_road[2]
 
                 next_city_visited = visiteds.get(next_city)
