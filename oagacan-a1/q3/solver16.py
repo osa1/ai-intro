@@ -68,7 +68,7 @@ class State:
             arr_copy[row_start + i] = temps[(i + 1) % self.size]
 
         moves = self.moves[:]
-        moves.append("left")
+        moves.append("left(" + str(row) + ")")
 
         return State(arr_copy, self.size, moves, self.cost + 1)
 
@@ -84,7 +84,7 @@ class State:
             arr_copy[row_start + i] = temps[(self.size - 1 + i) % self.size]
 
         moves = self.moves[:]
-        moves.append("right")
+        moves.append("right" + str(row) + ")")
 
         return State(arr_copy, self.size, moves, self.cost + 1)
 
@@ -101,7 +101,7 @@ class State:
             arr_copy[col + self.size * i] = temps[(i + 1) % self.size]
 
         moves = self.moves[:]
-        moves.append("up")
+        moves.append("up(" + str(col) + ")")
 
         return State(arr_copy, self.size, moves, self.cost + 1)
 
@@ -117,7 +117,7 @@ class State:
             arr_copy[col + self.size * i] = temps[(self.size - 1 + i) % self.size]
 
         moves = self.moves[:]
-        moves.append("down")
+        moves.append("down(" + str(col) + ")")
 
         return State(arr_copy, self.size, moves, self.cost + 1)
 
