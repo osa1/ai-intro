@@ -556,7 +556,7 @@ if __name__ == "__main__":
                 "routing option is ignored.")
         if routing_algorithm == "bfs":
             print(m.bfs(start_city, end_city, timeit))
-        else:
+        else: # dfs
             print(m.dfs(start_city, end_city, timeit))
     else:
         if routing_option == "segments":
@@ -565,7 +565,7 @@ if __name__ == "__main__":
         elif routing_option == "distance":
             cost_fun = cost_distance
             heuristic_fun = heuristic_straight_line
-        else:
+        else: # time
             cost_fun = cost_time
             heuristic_fun = None # FIXME
         print(m.astar(start_city, end_city, heuristic_fun, cost_fun, timeit))
