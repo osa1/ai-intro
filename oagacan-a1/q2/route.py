@@ -128,6 +128,9 @@ class Visited:
                 " path: " + str(self.path) + \
                 " cost: " + str(self.cost) + ">"
 
+    def __repr__(self):
+        return self.__str__()
+
 ##
 ## We took advantage of duck typing and create stack and queue implementations
 ## that share the same interface. This is used to implement BFS and DFS without
@@ -176,9 +179,12 @@ class Road:
         return Road(self.to, self.from_, self.distance, self.max_speed, self.name)
 
     def __str__(self):
-        return "<Road " + name + " from: " + from_ + \
-                " to: " + to + " distance: " + str(distance) + \
-                "speed limit: " + str(max_speed) + ">"
+        return "<Road " + self.name + " from: " + self.from_ + \
+                " to: " + self.to + " distance: " + str(self.distance) + \
+                "speed limit: " + str(self.max_speed) + ">"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class City:
@@ -199,6 +205,11 @@ class City:
         return "<City " + self.name + " latitude: " + str(self.lat) + \
                 " longitude: " + str(self.long) + ">"
 
+    def __repr__(self):
+        return self.__str__()
+
+
+# TODO: Remove maps by actually linking cities together, using roads.
 
 class Map:
     def __init__(self, cities, roads):
@@ -298,7 +309,7 @@ class Map:
                         continue
 
                 new_path = current.path[:]
-                new_path.append(next_city)
+                new_path.append((next_city, outgoing_road))
 
                 frontier.push(Visited(next_city, new_path, next_city_cost))
 
@@ -348,7 +359,15 @@ class Map:
             for outgoing_road in self.outgoing(current.what):
                 next_city = outgoing_road.to
                 next_city_obj = self.city_map[next_city]
-                f = current.cost + heuristic(end_city_obj, next_city_obj, outgoing_road)
+
+                current_city_obj = self.city_map[current.what]
+                # if not current_city_obj.lat or current_city_obj.long:
+                #     current_city_obj = self.__generate_best_location(
+                #             current_city, target_city_obj, current.path)
+
+                f = current.cost + \
+                        heuristic(end_city_obj, current_city_obj,
+                                next_city_obj, outgoing_road, current.path)
 
                 next_city_visited = visiteds.get(next_city)
                 if next_city_visited:
@@ -356,7 +375,7 @@ class Map:
                         continue
 
                 new_path = current.path[:]
-                new_path.append(next_city)
+                new_path.append((next_city_obj, outgoing_road))
 
                 heappush(pq, (f, Visited(next_city, new_path, f)))
 
@@ -365,12 +384,59 @@ class Map:
             print("Search took " + str(end - begin) + " seconds.")
 
 
-def heuristic_constant(target_city, next_city, road):
+def heuristic_constant(current_city, next_city, target_city, road, visiteds):
     """A heuristic that assigns same cost to every node(except the target,
     which is assigned 0). Effectively this makes A* same as BFS."""
     if target_city.name == next_city.name:
         return 0
     return 1
+
+def heuristic_straight_line(current_city, next_city, target_city, road, visiteds):
+    """Straight line distance heuristic. Distance is calcuated using Haversine
+    formula from latitude and longitudes."""
+    if not (target_city.lat and target_city.long):
+        # We can't do anything useful here, just assign minimum cost to every
+        # node.
+        return 1
+
+    if not (next_city.lat and next_city.long):
+        # We assign a cost for the best possible case: Starting with last known
+        # location with latitudes and longitudes, we sum the distances we took,
+        # and assume that that distance was a straight line from the city
+        # towards target. Since you can't take that distance while getting more
+        # closer to the target, this is admissible.
+        #
+        # If multiple cities in the visiteds list has unknown lat/long, we sum
+        # distances of roads used, and assume that distance was towards the
+        # goal.
+        dists = 0
+        for (visited, used_road) in reversed(visiteds):
+            dists += used_road.distance
+            if visited.lat and visited.long:
+                diff = distance_miles(target_city.lat, target_city.long, visited.lat, visited.long)
+                # This is where I realized this heuristic is actually not
+                # admissable. Assume three unknown cities, each with same
+                # distance from the target. If we visit each one we should have
+                # same heuristic, but instead our cost may get bigger as we
+                # move from one to other. This is again unlikely, but still,
+                # FIXME.
+                #
+                # TODO: One thing we can do is to generate middle point of all
+                # the neighbor cities and assume that's the point. But would
+                # that be admissible?
+                #
+                # Another safe but potentially inefficient heuristic is to give
+                # smallest cost to cities with unknown positions.
+                return abs(diff - dists)
+
+        # What? It seems like all of the cities in the list has unknown
+        # lat/long. This seems very unlikely, but we don't want to crash in the
+        # case of an exceptional input. Just return minimum cost to not
+        # eliminate any potential solutions.
+        return 1
+
+    # Hopefully this is what we use most of the time.
+    return distance_miles(target_city.lat, target_city.long, next_city.lat, next_city.long)
 
 
 ##
@@ -424,6 +490,20 @@ def distance_miles(lat1, lon1, lat2, lon2):
 
 if __name__ == "__main__":
     m = parse_map()
-    m.bfs("Ada,_Oklahoma", "Albany,_California", timeit=True)
-    m.astar("Ada,_Oklahoma", "Albany,_California", heuristic_constant, timeit=True)
-    m.dfs("Ada,_Oklahoma", "Albany,_California", timeit=True)
+
+    # bfs_solution = m.bfs("Ada,_Oklahoma", "Albany,_California", timeit=True)
+    # astar_solution = m.astar("Ada,_Oklahoma", "Albany,_California", heuristic_constant, timeit=True)
+    astar_straight_line = \
+        m.astar("Ada,_Oklahoma", "Albany,_California", heuristic_straight_line, timeit=True)
+
+    # print(len(bfs_solution.path))
+    # print(len(astar_solution.path))
+    # print(bfs_solution.cost)
+    # print(astar_solution.cost)
+    # print bfs_solution
+    # print astar_solution
+    print astar_straight_line
+
+    # m.bfs("Ada,_Oklahoma", "Albany,_California", timeit=True)
+    # m.astar("Ada,_Oklahoma", "Albany,_California", heuristic_constant, timeit=True)
+    # m.dfs("Ada,_Oklahoma", "Albany,_California", timeit=True)
