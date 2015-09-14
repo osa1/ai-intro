@@ -2,7 +2,6 @@ import re
 import time
 from collections import deque
 
-
 # A city is a (name : String, latitude : Float, longitude : Float) triplet.
 # Example: ("Bloomington,_Indiana", 39.165325, -86.5263857)
 def parse_city_gps(f):
@@ -213,6 +212,8 @@ class Map:
             current = frontier.pop()
             # print "current:", current.what
 
+            visiteds[current.what] = current
+
             if current.what == end_city:
                 if timeit:
                     end = time.clock()
@@ -220,18 +221,20 @@ class Map:
 
                 return current
 
-            already_visited = visiteds.get(current.what)
-            if already_visited:
-                if already_visited.cost < current.cost:
-                    continue
-
-            visiteds[current.what] = current
-
             for outgoing_road in self.outgoing(current.what):
                 # print "adding outgoing road:", str(outgoing_road)
+                next_city = outgoing_road[0]
+                next_city_cost = current.cost + 1
+
+                next_city_visited = visiteds.get(next_city)
+                if next_city_visited:
+                    if next_city_visited.cost <= next_city_cost:
+                        continue
+
                 new_path = current.path[:]
-                new_path.append(outgoing_road[0])
-                frontier.push(Visited(outgoing_road[0], new_path, current.cost + 1))
+                new_path.append(next_city)
+
+                frontier.push(Visited(next_city, new_path, next_city_cost))
 
         if timeit:
             end = time.clock()
@@ -263,10 +266,10 @@ class Map:
         while len(pq) != 0:
             current = heappop(pq)[1]
 
+            visiteds[current.what] = current
+
             if current.what == end_city:
                 return current
-
-            visiteds[current.what] = current
 
             for outgoing_road in self.outgoing(current.what):
                 next_city = outgoing_road[0]
@@ -287,6 +290,8 @@ class Map:
 
 
 def heuristic_constant(target, next, (next_lat, next_long)):
+    """A heuristic that assigns same cost to every node(except the target,
+    which is assigned 0). Effectively this makes A* same as BFS."""
     if target == next:
         return 0
     return 1
@@ -387,7 +392,6 @@ if __name__ == "__main__":
     m = Map(cities, roads)
     print str(m)
     # print m.outgoing("Ada,_Oklahoma")
-    print(m.bfs("Ada,_Oklahoma", "Albany,_California"))
+    print(m.bfs("Ada,_Oklahoma", "Albany,_California"), timeit=True)
     print(m.astar("Ada,_Oklahoma", "Albany,_California", heuristic_constant, timeit=True))
-    # print(m.dfs("Ada,_Oklahoma", "Ada,_Oklahoma", timeit=True))
-    # print(m.astar("Ada,_Oklahoma", "Ada,_Oklahoma", heuristic_constant, timeit=True))
+    print(m.dfs("Ada,_Oklahoma", "Albany,_California", timeit=True))
