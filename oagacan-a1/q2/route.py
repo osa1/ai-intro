@@ -363,9 +363,6 @@ class Map:
                 next_city_obj = self.city_map[next_city]
 
                 current_city_obj = self.city_map[current.what]
-                # if not current_city_obj.lat or current_city_obj.long:
-                #     current_city_obj = self.__generate_best_location(
-                #             current_city, target_city_obj, current.path)
 
                 f = current.cost + \
                         cost_fn(current_city_obj, next_city_obj, outgoing_road) + \
