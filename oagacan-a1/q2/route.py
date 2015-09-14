@@ -259,6 +259,9 @@ class Map:
         # I'd prefer a heap class with it's own methods...
         from heapq import heappush, heappop
 
+        if timeit:
+            begin = time.clock()
+
         pq = [(0, Visited(start_city, [], 0))]
 
         visiteds = {}
@@ -269,6 +272,10 @@ class Map:
             visiteds[current.what] = current
 
             if current.what == end_city:
+                if timeit:
+                    end = time.clock()
+                    print("Search took " + str(end - begin) + " seconds.")
+
                 return current
 
             for outgoing_road in self.outgoing(current.what):
@@ -287,6 +294,10 @@ class Map:
 
                 f = current.cost + heuristic(end_city, next_city, next_city_obj)
                 heappush(pq, (f, Visited(next_city, new_path, next_city_cost)))
+
+        if timeit:
+            end = time.clock()
+            print("Search took " + str(end - begin) + " seconds.")
 
 
 def heuristic_constant(target, next, (next_lat, next_long)):
@@ -392,6 +403,6 @@ if __name__ == "__main__":
     m = Map(cities, roads)
     print str(m)
     # print m.outgoing("Ada,_Oklahoma")
-    print(m.bfs("Ada,_Oklahoma", "Albany,_California"), timeit=True)
-    print(m.astar("Ada,_Oklahoma", "Albany,_California", heuristic_constant, timeit=True))
-    print(m.dfs("Ada,_Oklahoma", "Albany,_California", timeit=True))
+    m.bfs("Ada,_Oklahoma", "Albany,_California", timeit=True)
+    m.astar("Ada,_Oklahoma", "Albany,_California", heuristic_constant, timeit=True)
+    m.dfs("Ada,_Oklahoma", "Albany,_California", timeit=True)
