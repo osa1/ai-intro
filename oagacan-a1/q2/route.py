@@ -119,10 +119,6 @@ def parse_map():
 ################################################################################
 ## Some intermediate data structures
 
-# We took advantage of duck typing and create stack and queue implementations
-# that share the same interface. This is used to implement BFS and DFS without
-# duplicating code.
-
 class Visited:
     def __init__(self, what, path, cost):
         self.what = what
@@ -140,6 +136,10 @@ class Visited:
     def __repr__(self):
         return self.__str__()
 
+
+# We took advantage of duck typing and create stack and queue implementations
+# that share the same interface. This is used to implement BFS and DFS without
+# duplicating code.
 
 class Stack:
     def __init__(self):
