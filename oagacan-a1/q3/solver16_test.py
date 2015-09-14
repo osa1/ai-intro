@@ -86,22 +86,40 @@ class TestMoveMethods(unittest.TestCase):
             self.assertEqual(self.state, self.state.right(i).left(i))
             self.assertEqual(self.state, self.state.up(i).down(i))
 
-    def test_4x4(self):
+    def test_2x2(self):
         import itertools
         perms = map(list, list(itertools.permutations([1, 2, 3, 4])))
         for perm in perms:
             state = solver16.State(perm)
+            # print state.arr
             answer = solver16.brute_bfs(state)
+            # print answer.moves
+            # print
             self.assertIsNotNone(answer)
 
+    # def test_swap_3x3(self):
+    #     begin = [1, 6, 3, 4, 5, 2, 7, 8, 9]
+    #     state = solver16.State(begin)
+    #     answer = solver16.brute_bfs(state)
+    #     print answer
+    #     print
+    #     self.assertIsNotNone(answer)
 
     def test_swap_2x2(self):
         begin = [3, 2, 1, 4]
         state = solver16.State(begin)
         answer = solver16.brute_bfs(state)
-        print answer
-        print
+        # print answer
+        # print
         self.assertIsNotNone(answer)
+
+    # def test_one_move(self):
+    #     begin = [1, 2, 4, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    #     state = solver16.State(begin)
+    #     answer = solver16.brute_bfs(state)
+    #     print answer
+    #     print
+    #     self.assertIsNotNone(answer)
 
 if __name__ == "__main__":
     unittest.main()

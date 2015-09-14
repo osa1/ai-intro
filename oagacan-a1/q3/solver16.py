@@ -121,19 +121,12 @@ class State:
 
         return State(arr_copy, self.size, moves, self.cost + 1)
 
+    def solved(self):
+        return self.arr == range(1, self.size * self.size + 1)
+
 
 ################################################################################
-## Heuristics
-
-# This is the hard part. Things that I considered:
-#
-# - Manhattan distances of pieces to their correct locations:
-#   A naive version would not be admissible, for example, if we have a line
-#   like this:
-#
-#     4 1 2 3
-#
-#   Cost should be 1, not 4.
+## Brute-force search -- only useful on 2x2 board
 
 def brute_bfs(state0):
     """Brute-force breadth-first search implementation. Uses memoization to
@@ -149,7 +142,7 @@ def brute_bfs(state0):
 
         memo.add(state)
 
-        if solved(state):
+        if state.solved():
             return state
 
         for i in range(state.size):
@@ -207,7 +200,7 @@ def brute_dfs(state0):
 
         memo.add(state)
 
-        if solved(state):
+        if state.solved(state):
             return state
 
         for i in range(state.size):
@@ -229,13 +222,12 @@ def brute_dfs(state0):
 
     return None
 
+################################################################################
+## Heuristics
+
 def h1(state):
     """Manhattan distances of pieces to their correct locations."""
     pass
-
-def solved(state):
-    """Return whether the problem is solved."""
-    return state.arr == range(1, state.size * state.size + 1)
 
 ################################################################################
 ## Entry
