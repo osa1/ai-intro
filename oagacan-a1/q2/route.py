@@ -515,23 +515,57 @@ def distance_miles(lat1, lon1, lat2, lon2):
 ################################################################################
 ## Entry
 
+def parse_routing_option(s):
+    s = s.lower()
+    if s not in ["segments", "distance", "time"]:
+        msg = s + ' is not a valid routing option. ' + \
+                'It should be one of "segments", "distance", "time".'
+        raise argparse.ArgumentTypeError(msg)
+    return s
+
+def parse_routing_algorithm(s):
+    s = s.lower()
+    if s not in ["bfs", "dfs", "astar"]:
+        msg = s + ' is not a valid routing algorithm. ' + \
+                'It should be one of "bfs", "dfs", "astar".'
+        raise argparse.ArgumentTypeError(msg)
+    return s
+
 if __name__ == "__main__":
+    import argparse
+
+    arg_parser = argparse.ArgumentParser(description="Assignment 1 Problem 2")
+    arg_parser.add_argument("start-city", type=str, nargs=1)
+    arg_parser.add_argument("end-city", type=str, nargs=1)
+    arg_parser.add_argument("routing-option", type=parse_routing_option, nargs=1)
+    arg_parser.add_argument("routing-algorithm", type=parse_routing_algorithm, nargs=1)
+    arg_parser.add_argument("-t", "--time", action="store_true")
+
+    args = vars(arg_parser.parse_args())
+    routing_algorithm = args["routing-algorithm"][0]
+    routing_option = args["routing-option"][0]
+    start_city = args["start-city"][0]
+    end_city = args["end-city"][0]
+    timeit = args["time"]
+    print args
+
     m = parse_map()
 
-    bfs_solution = m.bfs("Ada,_Oklahoma", "Albany,_California", timeit=True)
-    astar_solution = m.astar(
-            "Ada,_Oklahoma", "Albany,_California", heuristic_constant, cost_distance, timeit=True)
-    # astar_straight_line = \
-    #     m.astar("Ada,_Oklahoma", "Albany,_California", heuristic_straight_line, timeit=True)
-
-    print(len(bfs_solution.path))
-    print(len(astar_solution.path))
-    print(bfs_solution.cost)
-    print(astar_solution.cost)
-    # print bfs_solution
-    # print astar_solution
-    # print astar_straight_line
-
-    # m.bfs("Ada,_Oklahoma", "Albany,_California", timeit=True)
-    # m.astar("Ada,_Oklahoma", "Albany,_California", heuristic_constant, timeit=True)
-    # m.dfs("Ada,_Oklahoma", "Albany,_California", timeit=True)
+    if routing_algorithm in ["bfs", "dfs"]:
+        print("WARNING: BFS and DFS don't care about costs and heuristics, " + \
+                "routing option is ignored.")
+        if routing_algorithm == "bfs":
+            print(m.bfs(start_city, end_city, timeit))
+        else:
+            print(m.dfs(start_city, end_city, timeit))
+    else:
+        if routing_option == "segments":
+            cost_fun = cost_segments
+            heuristic_fun = heuristic_constant
+        elif routing_option == "distance":
+            cost_fun = cost_distance
+            heuristic_fun = heuristic_straight_line
+        else:
+            cost_fun = cost_time
+            heuristic_fun = None # FIXME
+        print(m.astar(start_city, end_city, heuristic_fun, cost_fun, timeit))
