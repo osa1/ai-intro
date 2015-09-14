@@ -79,6 +79,44 @@ def parse_roads(f):
 
     return ret
 
+def parse_map():
+    # In my dev env. text files are in parent directory, but assuming
+    # instructors may be running it from top-level, we're checking parent
+    # directory and current directory for files here.
+    gps_file = try_open(["city-gps.txt", "../city-gps.txt"])
+    if not gps_file:
+        print "Can't find city-gps.txt in current directory or parent directory."
+        exit(1)
+
+    try:
+        cities = parse_city_gps(gps_file)
+    except RuntimeError as e:
+        print "Can't parse cities. Error:"
+        print e
+    finally:
+        gps_file.close()
+
+    # for city in cities:
+    #     print city
+
+    road_file = try_open(["road-segments.txt", "../road-segments.txt"])
+    if not road_file:
+        print "Can't find road-segments.txt in current directory or parent directory."
+        exit(1)
+
+    try:
+        roads = parse_roads(road_file)
+    except RuntimeError as e:
+        print "Can't parse roads. Error:"
+        print e
+    finally:
+        road_file.close()
+
+    # for road in roads:
+    #     print road
+
+    return Map(cities, roads)
+
 ##
 ##
 ##
@@ -358,51 +396,7 @@ def distance_miles(lat1, lon1, lat2, lon2):
 ##
 
 if __name__ == "__main__":
-    # In my dev env. text files are in parent directory, but assuming
-    # instructors may be running it from top-level, we're checking parent
-    # directory and current directory for files here.
-    gps_file = try_open(["city-gps.txt", "../city-gps.txt"])
-    if not gps_file:
-        print "Can't find city-gps.txt in current directory or parent directory."
-        exit(1)
-
-    try:
-        cities = parse_city_gps(gps_file)
-    except RuntimeError as e:
-        print "Can't parse cities. Error:"
-        print e
-    finally:
-        gps_file.close()
-
-    for city in cities:
-        print city
-
-    road_file = try_open(["road-segments.txt", "../road-segments.txt"])
-    if not road_file:
-        print "Can't find road-segments.txt in current directory or parent directory."
-        exit(1)
-
-    try:
-        roads = parse_roads(road_file)
-    except RuntimeError as e:
-        print "Can't parse roads. Error:"
-        print e
-    finally:
-        road_file.close()
-
-    for road in roads:
-        print road
-
-    city1 = cities[0]
-    city2 = cities[1]
-    print "==="
-    print city1
-    print city2
-
-    print(distance_miles(city1[1], city1[2], city2[1], city2[2]))
-    m = Map(cities, roads)
-    print str(m)
-    # print m.outgoing("Ada,_Oklahoma")
+    m = parse_map()
     m.bfs("Ada,_Oklahoma", "Albany,_California", timeit=True)
     m.astar("Ada,_Oklahoma", "Albany,_California", heuristic_constant, timeit=True)
     m.dfs("Ada,_Oklahoma", "Albany,_California", timeit=True)
