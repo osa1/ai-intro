@@ -210,6 +210,9 @@ class City:
     def __repr__(self):
         return self.__str__()
 
+    def __hash__(self):
+        return hash(self.name)
+
 
 ################################################################################
 ## Main class, implements search algorithms
@@ -276,6 +279,28 @@ class Map:
             ret += len(v)
         return ret / 2 # divide by 2 because we duplicate roads for bi-directionality.
 
+    def __neighbors(self, city):
+        return { self.city_map[r.to] for r in self.road_map[city.name] }
+
+    def __try_fill_missing_gps(self, city):
+        ns = self.__neighbors(city)
+        points = []
+
+        for n in ns:
+            if n.lat and n.long:
+                points.append((n.lat, n.long))
+
+        if len(points) < 2:
+            return False
+        else:
+            # print "Calculating middle point of", len(points), "points."
+            (lat, long) = middle_point(points)
+
+            city.lat = lat
+            city.long = long
+
+            return True
+
     def fill_missing_gps(self):
         """Generate GPS positions for cities with missing GPS positions. We
         generate locations by looking at neighbors(e.g. cities with a road to
@@ -305,26 +330,38 @@ class Map:
         print "Missing:", missing, "not missing:", not_missing
         # Ouch! "Missing: 1052 not missing: 5477"
 
+        resolveds   = []
+        unresolveds = []
+
         for _, city in self.city_map.iteritems():
-            if not (city.lat and city.long):
-                city_roads = self.road_map[city.name]
-                print city.name, "has", len(city_roads), "roads."
-                print city_roads
+            if city.lat and city.long:
+                resolveds.append(city)
+            else:
+                if self.__try_fill_missing_gps(city):
+                    resolveds.append(city)
+                else:
+                    unresolveds.append(city)
 
-                points = []
-                for road in city_roads:
-                    to = self.city_map[road.to]
-                    if (to.lat and to.long):
-                        points.append((to.lat, to.long))
-                    else:
-                        # TODO: We need a dependency graph for calculating mid-points.
-                        print "WARNING: Ignoring neighbor with unknown lat/long."
+        print str(len(resolveds)), "resolved cities."
+        print str(len(unresolveds)), "unresolved cities."
 
-                print "Calculating middle point of", len(points), "points."
-                (lat, long) = middle_point(points)
+        # We run a very simple quadratic algorithm here. We loop until we
+        # resolve all the unresolved cases, as long as we make progress(e.g.
+        # solve at least one unresolved case) at each iteration.
+        made_progress = True
+        idx = len(unresolveds) - 1
+        while made_progress:
+            made_progress = False
+            l = len(unresolveds)
+            unresolveds = [ u for u in unresolveds if not self.__try_fill_missing_gps(u) ]
+            if l != len(unresolveds):
+                made_progress = True
 
-                city.lat = lat
-                city.long = long
+        # print unresolveds
+        print len(unresolveds)
+
+        # TODO: We should pick a point in the state for missing cities.
+        # TODO: The whole Quebec is missing. WTF?
 
     def outgoing(self, city):
         return self.road_map.get(city)
@@ -638,6 +675,8 @@ if __name__ == "__main__":
 
     m = parse_map()
     m.fill_missing_gps()
+
+    print(set(m.road_map["St-Felicien,_Quebec"]))
 
     # if routing_algorithm in ["bfs", "dfs"]:
     #     print("WARNING: BFS and DFS don't care about costs and heuristics, " + \
