@@ -70,8 +70,7 @@ def parse_roads(f):
     for line in cant_parse:
         # print "trying to parse: " + line
         ms = re.match(missing_info_pattern, line)
-        ret.append(Road(ms.group(1), ms.group(2),
-            int(ms.group(3)), None, ms.group(4)))
+        ret.append(Road(ms.group(1), ms.group(2), int(ms.group(3)), None, ms.group(4)))
 
     return ret
 
@@ -361,21 +360,46 @@ class Map:
 
         total_speed = 0
         roads_with_numbers = 0
-        needs_fixing = []
+        speed_needs_fixing = []
+        distance_needs_fixing = []
         for (_, rs) in self.road_map.iteritems():
             for r in rs:
                 if r.max_speed == 0 or r.max_speed == None:
-                    needs_fixing.append(r)
+                    speed_needs_fixing.append(r)
                 else:
                     total_speed += r.max_speed
                     roads_with_numbers += 1
+
+                if r.distance == 0 or r.distance == None:
+                    distance_needs_fixing.append(r)
 
         # we add each road twice but it's OK because we're calculating average
         average_speed = total_speed / roads_with_numbers
         # print "average_speed:", average_speed
 
-        for road in needs_fixing:
+        for road in speed_needs_fixing:
             road.max_speed = average_speed
+
+        for road in distance_needs_fixing:
+            f = self.city_map[road.from_]
+            t = self.city_map[road.to]
+            road.distance = distance_miles(f.lat, f.long, t.lat, t.long)
+
+            # NOTE [Unknown locations with zero distance roads]
+            #
+            # This sucks! Assume we have two cities with 1) unknown GPS
+            # coordinates 2) same neighbors. In our implementation we give
+            # those two cities same GPS coordinates because we're assuming that
+            # they're in the middle of their neighbors. Now if they have a road
+            # between them we give it distance 0, because their GPS coordinates
+            # are the same.
+            #
+            # I don't know how to solve this and I don't want to waste more
+            # time with this.
+            #
+            # Figuring out how this issue effects solutions is another problem.
+
+            # assert road.distance != None and road.distance != 0
 
     def outgoing(self, city):
         return self.road_map.get(city)
