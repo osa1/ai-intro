@@ -49,5 +49,22 @@ class TestMoveMethods(unittest.TestCase):
     def test_astar_distance_2(self):
         self.astar_distance("Bloomington,_Indiana",  "Chicago,_Illinois")
 
+    def test_astar_time(self):
+        start = "Bloomington,_Indiana"
+        end = "Indianapolis,_Indiana"
+        astar_result = self.m.astar(
+                start, end, route.heuristic_straight_line, route.cost_time)
+        self.assertIsNotNone(astar_result)
+
+        uniform_result = self.m.uniform_cost(start, end, route.cost_time)
+        self.assertIsNotNone(uniform_result)
+
+        if astar_result.cost != uniform_result.cost:
+            print "A* result:"
+            print astar_result
+            print "Dijkstra result:"
+            print uniform_result
+        self.assertEqual(astar_result.cost, uniform_result.cost)
+
 if __name__ == "__main__":
     unittest.main()

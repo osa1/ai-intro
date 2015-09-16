@@ -496,7 +496,6 @@ class Map:
                 next_city = outgoing_road.to
                 next_city_obj = self.city_map[next_city]
 
-
                 actual_cost = current.cost + cost_fn(outgoing_road)
 
                 next_city_visited = visiteds.get(next_city)
@@ -693,5 +692,5 @@ if __name__ == "__main__":
             heuristic_fun = heuristic_straight_line
         else: # time
             cost_fun = cost_time
-            heuristic_fun = None # FIXME
+            heuristic_fun = heuristic_straight_line
         print(m.astar(start_city, end_city, heuristic_fun, cost_fun, timeit))
