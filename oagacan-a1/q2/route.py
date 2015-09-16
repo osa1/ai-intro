@@ -453,8 +453,7 @@ class Map:
                 current_city_obj = self.city_map[current.what]
 
                 actual_cost = current.cost + cost_fn(outgoing_road)
-                f = actual_cost + heuristic(
-                        end_city_obj, current_city_obj, next_city_obj, outgoing_road, current.path)
+                f = actual_cost + heuristic(next_city_obj, end_city_obj)
 
                 next_city_visited = visiteds.get(next_city)
                 if next_city_visited:
@@ -474,58 +473,16 @@ class Map:
 ################################################################################
 ## Heuristics
 
-def heuristic_constant(current_city, next_city, target_city, road, visiteds):
+def heuristic_constant(next_city, target_city):
     """A heuristic that assigns same cost to every node(except the target,
     which is assigned 0). Effectively this makes A* same as BFS."""
     if target_city.name == next_city.name:
         return 0
     return 1
 
-def heuristic_straight_line(current_city, next_city, target_city, road, visiteds):
+def heuristic_straight_line(next_city, target_city):
     """Straight line distance heuristic. Distance is calcuated using Haversine
     formula from latitude and longitudes."""
-    if not (target_city.lat and target_city.long):
-        # We can't do anything useful here, just assign minimum cost to every
-        # node.
-        return 1
-
-    if not (next_city.lat and next_city.long):
-        # We assign a cost for the best possible case: Starting with last known
-        # location with latitudes and longitudes, we sum the distances we took,
-        # and assume that that distance was a straight line from the city
-        # towards target. Since you can't take that distance while getting more
-        # closer to the target, this is admissible.
-        #
-        # If multiple cities in the visiteds list has unknown lat/long, we sum
-        # distances of roads used, and assume that distance was towards the
-        # goal.
-        dists = 0
-        for (visited, used_road) in reversed(visiteds):
-            dists += used_road.distance
-            if visited.lat and visited.long:
-                diff = distance_miles(target_city.lat, target_city.long, visited.lat, visited.long)
-                # This is where I realized this heuristic is actually not
-                # admissable. Assume three unknown cities, each with same
-                # distance from the target. If we visit each one we should have
-                # same heuristic, but instead our cost may get bigger as we
-                # move from one to other. This is again unlikely, but still,
-                # FIXME.
-                #
-                # TODO: One thing we can do is to generate middle point of all
-                # the neighbor cities and assume that's the point. But would
-                # that be admissible?
-                #
-                # Another safe but potentially inefficient heuristic is to give
-                # smallest cost to cities with unknown positions.
-                return abs(diff - dists)
-
-        # What? It seems like all of the cities in the list has unknown
-        # lat/long. This seems very unlikely, but we don't want to crash in the
-        # case of an exceptional input. Just return minimum cost to not
-        # eliminate any potential solutions.
-        return 1
-
-    # Hopefully this is what we use most of the time.
     return distance_miles(target_city.lat, target_city.long, next_city.lat, next_city.long)
 
 ################################################################################
