@@ -9,7 +9,6 @@ test_configs = \
 class TestMoveMethods(unittest.TestCase):
     def setUp(self):
         self.m = route.parse_map()
-        self.m.fill_missing_gps()
 
     def test_bfs_runs(self):
         for (c1, c2) in test_configs:
@@ -43,15 +42,18 @@ class TestMoveMethods(unittest.TestCase):
             print uniform_result
         self.assertEqual(astar_result.cost, uniform_result.cost)
 
-    def test_astar_distance(self):
+    def test_astar_distance_1(self):
+        # test a short distance
         self.astar_distance("Bloomington,_Indiana",  "Indianapolis,_Indiana")
 
     def test_astar_distance_2(self):
         self.astar_distance("Bloomington,_Indiana",  "Chicago,_Illinois")
 
-    def test_astar_time(self):
-        start = "Bloomington,_Indiana"
-        end = "Indianapolis,_Indiana"
+    def test_astar_distance_3(self):
+        # test a very long distance
+        self.astar_distance("Aberdeen,_Washington", "Yulee,_Florida")
+
+    def astar_time(self, start, end):
         astar_result = self.m.astar(
                 start, end, route.heuristic_straight_line, route.cost_time)
         self.assertIsNotNone(astar_result)
@@ -65,6 +67,14 @@ class TestMoveMethods(unittest.TestCase):
             print "Dijkstra result:"
             print uniform_result
         self.assertEqual(astar_result.cost, uniform_result.cost)
+
+    def test_astar_time_1(self):
+        # test a short distance
+        self.astar_time("Bloomington,_Indiana", "Indianapolis,_Indiana")
+
+    def test_astar_time_2(self):
+        # test a long distance
+        self.astar_time("Aberdeen,_Washington", "Yulee,_Florida")
 
 if __name__ == "__main__":
     unittest.main()

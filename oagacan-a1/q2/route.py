@@ -67,14 +67,11 @@ def parse_roads(f):
     missing_info_pattern = re.compile(
             r"^\s*([^\s]+) ([^\s]+)\s+(\d+)\s+([^\s]+)\s*$")
 
-    average_speed = sum(map(lambda x: x.max_speed, ret)) / len(ret)
-    # print "average_speed: ", average_speed
-
     for line in cant_parse:
         # print "trying to parse: " + line
         ms = re.match(missing_info_pattern, line)
         ret.append(Road(ms.group(1), ms.group(2),
-            int(ms.group(3)), average_speed, ms.group(4)))
+            int(ms.group(3)), None, ms.group(4)))
 
     return ret
 
@@ -260,6 +257,9 @@ class Map:
                 self.city_map[to] = City(to, None, None)
                 self.road_map[to] = [road.invert()]
 
+        self.__fill_missing_gps()
+        self.__fixup_zero_roads()
+
     def __str__(self):
         return "<Map with " + str(len(self.city_map)) + \
                " cities and " + str(self.__len_roads()) + " roads>"
@@ -298,7 +298,7 @@ class Map:
 
             return True
 
-    def fill_missing_gps(self):
+    def __fill_missing_gps(self):
         """Generate GPS positions for cities with missing GPS positions. We
         generate locations by looking at neighbors(e.g. cities with a road to
         this city with missing info) and generating GPS coordinates of middle
@@ -311,9 +311,6 @@ class Map:
         (We have yet to see a city with missing info and one/zero neighbors, so
         we don't handle that case)
         """
-        # TODO: It's weird that missing speed info is filled by parser, while
-        # GPS is filled by State here. Parser should generate a None if speed
-        # info is missing and we should handle it here similarly.
 
         # print some stats, for testing
         missing = 0
@@ -357,6 +354,28 @@ class Map:
                 made_progress = True
 
         assert len(unresolveds) == 0
+
+    def __fixup_zero_roads(self):
+        """Some of the roads have 0 length and/or 0/None max speed. We try to
+        give reasonable numbers to these roads here."""
+
+        total_speed = 0
+        roads_with_numbers = 0
+        needs_fixing = []
+        for (_, rs) in self.road_map.iteritems():
+            for r in rs:
+                if r.max_speed == 0 or r.max_speed == None:
+                    needs_fixing.append(r)
+                else:
+                    total_speed += r.max_speed
+                    roads_with_numbers += 1
+
+        # we add each road twice but it's OK because we're calculating average
+        average_speed = total_speed / roads_with_numbers
+        # print "average_speed:", average_speed
+
+        for road in needs_fixing:
+            road.max_speed = average_speed
 
     def outgoing(self, city):
         return self.road_map.get(city)
@@ -674,7 +693,6 @@ if __name__ == "__main__":
     print args
 
     m = parse_map()
-    m.fill_missing_gps()
 
     if routing_algorithm in ["bfs", "dfs"]:
         print("WARNING: BFS and DFS don't care about costs and heuristics, " + \
