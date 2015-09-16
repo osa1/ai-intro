@@ -452,7 +452,7 @@ class Map:
 
                 current_city_obj = self.city_map[current.what]
 
-                actual_cost = current.cost + cost_fn(current_city_obj, next_city_obj, outgoing_road)
+                actual_cost = current.cost + cost_fn(outgoing_road)
                 f = actual_cost + heuristic(
                         end_city_obj, current_city_obj, next_city_obj, outgoing_road, current.path)
 
@@ -537,15 +537,15 @@ def heuristic_straight_line(current_city, next_city, target_city, road, visiteds
 # NOTE: Currently they're more general than needed. For this assignment all we
 # need to know in cost functions is the road used, but no big deal.
 
-def cost_distance(current_city, next_city, used_road):
+def cost_distance(used_road):
     """Use when the cost is the distance we take."""
     return used_road.distance
 
-def cost_segments(current_city, next_city, used_road):
+def cost_segments(used_road):
     """Use when the cost is amount of turns we make."""
     return 1
 
-def cost_time(current_city, next_city, used_road):
+def cost_time(used_road):
     """Use when the cost is total time spent on the road."""
     return used_road.distance / used_road.max_speed
 
