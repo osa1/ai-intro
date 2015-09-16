@@ -362,11 +362,7 @@ class Map:
         return self.road_map.get(city)
 
     def uninformed_search(self, start_city, end_city, frontier_cls, timeit=False):
-        if start_city not in self.city_map:
-            raise RuntimeError('Unknown city "' + start_city + '", aborting.')
-
-        if end_city not in self.city_map:
-            raise RuntimeError('Unknown city "' + end_city + '", aborting.')
+        self.__check_cities(start_city, end_city)
 
         if timeit:
             begin = time.clock()
@@ -417,12 +413,9 @@ class Map:
         return self.uninformed_search(start_city, end_city, Stack, timeit=timeit)
 
     def astar(self, start_city, end_city, heuristic, cost_fn, timeit=False):
-        if start_city not in self.city_map:
-            raise RuntimeError('Unknown city "' + start_city + '", aborting.')
+        self.__check_cities(start_city, end_city)
 
-        end_city_obj = self.city_map.get(end_city)
-        if not end_city_obj:
-            raise RuntimeError('Unknown city "' + end_city + '", aborting.')
+        end_city_obj = self.city_map[end_city]
 
         # I'd prefer a heap class with it's own methods...
         from heapq import heappush, heappop
@@ -468,6 +461,11 @@ class Map:
         if timeit:
             end = time.clock()
             print("Search took " + str(end - begin) + " seconds.")
+
+    def __check_cities(self, *cities):
+        for city in cities:
+            if city not in self.city_map:
+                raise RuntimeError('Unknown city "' + city + '", aborting.')
 
 
 ################################################################################
