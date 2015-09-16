@@ -274,7 +274,57 @@ class Map:
         ret = 0
         for (_, v) in self.road_map.iteritems():
             ret += len(v)
-        return ret
+        return ret / 2 # divide by 2 because we duplicate roads for bi-directionality.
+
+    def fill_missing_gps(self):
+        """Generate GPS positions for cities with missing GPS positions. We
+        generate locations by looking at neighbors(e.g. cities with a road to
+        this city with missing info) and generating GPS coordinates of middle
+        point of all neighbor cities.
+
+        Since most of the cities with missing information are actually
+        intersection points of roads(instead of actual cities), they should
+        have at least two neighbors.
+
+        (We have yet to see a city with missing info and one/zero neighbors, so
+        we don't handle that case)
+        """
+        # TODO: It's weird that missing speed info is filled by parser, while
+        # GPS is filled by State here. Parser should generate a None if speed
+        # info is missing and we should handle it here similarly.
+
+        # print some stats, for testing
+        missing = 0
+        not_missing = 0
+        for _, city in self.city_map.iteritems():
+            if not (city.lat and city.long):
+                print "found city with missing info: " + str(city)
+                missing += 1
+            else:
+                not_missing += 1
+        print "Missing:", missing, "not missing:", not_missing
+        # Ouch! "Missing: 1052 not missing: 5477"
+
+        for _, city in self.city_map.iteritems():
+            if not (city.lat and city.long):
+                city_roads = self.road_map[city.name]
+                print city.name, "has", len(city_roads), "roads."
+                print city_roads
+
+                points = []
+                for road in city_roads:
+                    to = self.city_map[road.to]
+                    if (to.lat and to.long):
+                        points.append((to.lat, to.long))
+                    else:
+                        # TODO: We need a dependency graph for calculating mid-points.
+                        print "WARNING: Ignoring neighbor with unknown lat/long."
+
+                print "Calculating middle point of", len(points), "points."
+                (lat, long) = middle_point(points)
+
+                city.lat = lat
+                city.long = long
 
     def outgoing(self, city):
         return self.road_map.get(city)
@@ -511,6 +561,44 @@ def distance_miles(lat1, lon1, lat2, lon2):
     # getting the answer from it and converting it to the format I like here.
     return to_miles(distance(lat1, lon1, lat2, lon2))
 
+def middle_point(points):
+    """Calculate geographic midpoint of given points. There should be at least
+    two points. Algorithm is taken from http://www.geomidpoint.com/calculation.html
+    """
+    assert len(points) >= 2
+
+    import math
+
+    xs = []
+    ys = []
+    zs = []
+
+    for (lat, long) in points:
+        lat_rads = math.radians(lat)
+        long_rads = math.radians(long)
+
+        x = math.cos(lat_rads) * math.cos(long_rads)
+        y = math.cos(lat_rads) * math.sin(long_rads)
+        z = math.sin(lat_rads)
+
+        xs.append(x)
+        ys.append(y)
+        zs.append(z)
+
+    x = sum(xs) / len(xs)
+    y = sum(ys) / len(ys)
+    z = sum(zs) / len(zs)
+
+    long = math.atan2(y, x)
+    hyp = math.sqrt(x * x + y * y)
+    lat = math.atan2(z, hyp)
+
+    lat_dgr = math.degrees(lat)
+    long_dgr = math.degrees(long)
+
+    return (lat_dgr, long_dgr)
+
+
 ################################################################################
 ## Entry
 
@@ -549,22 +637,23 @@ if __name__ == "__main__":
     print args
 
     m = parse_map()
+    m.fill_missing_gps()
 
-    if routing_algorithm in ["bfs", "dfs"]:
-        print("WARNING: BFS and DFS don't care about costs and heuristics, " + \
-                "routing option is ignored.")
-        if routing_algorithm == "bfs":
-            print(m.bfs(start_city, end_city, timeit))
-        else: # dfs
-            print(m.dfs(start_city, end_city, timeit))
-    else:
-        if routing_option == "segments":
-            cost_fun = cost_segments
-            heuristic_fun = heuristic_constant
-        elif routing_option == "distance":
-            cost_fun = cost_distance
-            heuristic_fun = heuristic_straight_line
-        else: # time
-            cost_fun = cost_time
-            heuristic_fun = None # FIXME
-        print(m.astar(start_city, end_city, heuristic_fun, cost_fun, timeit))
+    # if routing_algorithm in ["bfs", "dfs"]:
+    #     print("WARNING: BFS and DFS don't care about costs and heuristics, " + \
+    #             "routing option is ignored.")
+    #     if routing_algorithm == "bfs":
+    #         print(m.bfs(start_city, end_city, timeit))
+    #     else: # dfs
+    #         print(m.dfs(start_city, end_city, timeit))
+    # else:
+    #     if routing_option == "segments":
+    #         cost_fun = cost_segments
+    #         heuristic_fun = heuristic_constant
+    #     elif routing_option == "distance":
+    #         cost_fun = cost_distance
+    #         heuristic_fun = heuristic_straight_line
+    #     else: # time
+    #         cost_fun = cost_time
+    #         heuristic_fun = None # FIXME
+    #     print(m.astar(start_city, end_city, heuristic_fun, cost_fun, timeit))
