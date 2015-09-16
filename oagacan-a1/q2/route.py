@@ -439,11 +439,11 @@ class Map:
 
                 return current
 
+            current_city_obj = self.city_map[current.what]
+
             for outgoing_road in self.outgoing(current.what):
                 next_city = outgoing_road.to
                 next_city_obj = self.city_map[next_city]
-
-                current_city_obj = self.city_map[current.what]
 
                 actual_cost = current.cost + cost_fn(outgoing_road)
                 f = actual_cost + heuristic(next_city_obj, end_city_obj)
@@ -457,6 +457,57 @@ class Map:
                 new_path.append((next_city_obj, outgoing_road))
 
                 heappush(pq, (f, Visited(next_city, new_path, actual_cost)))
+
+        if timeit:
+            end = time.clock()
+            print("Search took " + str(end - begin) + " seconds.")
+
+    def uniform_cost(self, start_city, end_city, cost_fn, timeit=False):
+        """Dijkstra's. Essentially A* code, except we don't heuristics and in
+        the priority queue we use actual costs to reach there as keys."""
+        self.__check_cities(start_city, end_city)
+
+        end_city_obj = self.city_map[end_city]
+
+        from heapq import heappush, heappop
+
+        if timeit:
+            begin = time.clock()
+
+        pq = [(0, Visited(start_city, [], 0))]
+
+        visiteds = {}
+
+        while len(pq) != 0:
+            current = heappop(pq)[1]
+
+            visiteds[current.what] = current
+
+            if current.what == end_city:
+                if timeit:
+                    end = time.clock()
+                    print("Search took " + str(end - begin) + " seconds.")
+
+                return current
+
+            current_city_obj = self.city_map[current.what]
+
+            for outgoing_road in self.outgoing(current.what):
+                next_city = outgoing_road.to
+                next_city_obj = self.city_map[next_city]
+
+
+                actual_cost = current.cost + cost_fn(outgoing_road)
+
+                next_city_visited = visiteds.get(next_city)
+                if next_city_visited:
+                    if next_city_visited.cost <= actual_cost:
+                        continue
+
+                new_path = current.path[:]
+                new_path.append((next_city_obj, outgoing_road))
+
+                heappush(pq, (actual_cost, Visited(next_city, new_path, actual_cost)))
 
         if timeit:
             end = time.clock()
