@@ -97,13 +97,14 @@ class TestMoveMethods(unittest.TestCase):
             # print
             self.assertIsNotNone(answer)
 
-    def test_swap_3x3(self):
-        begin = [1, 6, 3, 4, 5, 2, 7, 8, 9]
-        state = solver16.State(begin)
-        answer = solver16.astar(state, solver16.h1)
-        print answer
-        print
-        self.assertIsNotNone(answer)
+    # def test_swap_3x3(self):
+    #     begin = [1, 6, 3, 4, 5, 2, 7, 8, 9]
+    #     state = solver16.State(begin)
+    #     # answer = solver16.astar(state, solver16.h1)
+    #     answer = solver16.brute_bfs(state)
+    #     print answer
+    #     print
+    #     self.assertIsNotNone(answer)
 
     def test_swap_2x2(self):
         begin = [3, 2, 1, 4]
