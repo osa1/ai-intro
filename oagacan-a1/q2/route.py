@@ -95,9 +95,6 @@ def parse_map():
     finally:
         gps_file.close()
 
-    # for city in cities:
-    #     print city
-
     road_file = try_open(["road-segments.txt", "../road-segments.txt"])
     if not road_file:
         print "Can't find road-segments.txt in current directory or parent directory."
@@ -110,9 +107,6 @@ def parse_map():
         print e
     finally:
         road_file.close()
-
-    # for road in roads:
-    #     print road
 
     return Map(cities, roads)
 
@@ -256,9 +250,6 @@ class Map:
                 # I don't know how to handle those roads in search algorithms
                 # yet, but here we just add them to the database, using None
                 # for unknown information.
-
-                # raise RuntimeError("Found a road from nowhere: " + from_)
-                # print("WARNING: Found a road from nowhere: " + from_)
                 self.city_map[from_] = City(from_, None, None)
                 self.road_map[from_] = [road]
 
@@ -290,8 +281,14 @@ class Map:
             if n.lat and n.long:
                 points.append((n.lat, n.long))
 
-        if len(points) < 2:
+        if len(points) == 0:
             return False
+        if len(points) == 1:
+            # This is not ideal, but I can't see anything better to do right
+            # now. Make the location same as it's only neighbor.
+            city.lat = points[0][0]
+            city.long = points[0][1]
+            return True
         else:
             # print "Calculating middle point of", len(points), "points."
             (lat, long) = middle_point(points)
@@ -323,11 +320,11 @@ class Map:
         not_missing = 0
         for _, city in self.city_map.iteritems():
             if not (city.lat and city.long):
-                print "found city with missing info: " + str(city)
+                # print "found city with missing info: " + str(city)
                 missing += 1
             else:
                 not_missing += 1
-        print "Missing:", missing, "not missing:", not_missing
+        # print "Missing:", missing, "not missing:", not_missing
         # Ouch! "Missing: 1052 not missing: 5477"
 
         resolveds   = []
@@ -342,12 +339,14 @@ class Map:
                 else:
                     unresolveds.append(city)
 
-        print str(len(resolveds)), "resolved cities."
-        print str(len(unresolveds)), "unresolved cities."
+        # print str(len(resolveds)), "resolved cities."
+        # print str(len(unresolveds)), "unresolved cities."
 
         # We run a very simple quadratic algorithm here. We loop until we
         # resolve all the unresolved cases, as long as we make progress(e.g.
         # solve at least one unresolved case) at each iteration.
+        #
+        # Apparently Quebec is an unknown place on earth.
         made_progress = True
         idx = len(unresolveds) - 1
         while made_progress:
@@ -357,11 +356,7 @@ class Map:
             if l != len(unresolveds):
                 made_progress = True
 
-        # print unresolveds
-        print len(unresolveds)
-
-        # TODO: We should pick a point in the state for missing cities.
-        # TODO: The whole Quebec is missing. WTF?
+        assert len(unresolveds) == 0
 
     def outgoing(self, city):
         return self.road_map.get(city)
@@ -676,23 +671,21 @@ if __name__ == "__main__":
     m = parse_map()
     m.fill_missing_gps()
 
-    print(set(m.road_map["St-Felicien,_Quebec"]))
-
-    # if routing_algorithm in ["bfs", "dfs"]:
-    #     print("WARNING: BFS and DFS don't care about costs and heuristics, " + \
-    #             "routing option is ignored.")
-    #     if routing_algorithm == "bfs":
-    #         print(m.bfs(start_city, end_city, timeit))
-    #     else: # dfs
-    #         print(m.dfs(start_city, end_city, timeit))
-    # else:
-    #     if routing_option == "segments":
-    #         cost_fun = cost_segments
-    #         heuristic_fun = heuristic_constant
-    #     elif routing_option == "distance":
-    #         cost_fun = cost_distance
-    #         heuristic_fun = heuristic_straight_line
-    #     else: # time
-    #         cost_fun = cost_time
-    #         heuristic_fun = None # FIXME
-    #     print(m.astar(start_city, end_city, heuristic_fun, cost_fun, timeit))
+    if routing_algorithm in ["bfs", "dfs"]:
+        print("WARNING: BFS and DFS don't care about costs and heuristics, " + \
+                "routing option is ignored.")
+        if routing_algorithm == "bfs":
+            print(m.bfs(start_city, end_city, timeit))
+        else: # dfs
+            print(m.dfs(start_city, end_city, timeit))
+    else:
+        if routing_option == "segments":
+            cost_fun = cost_segments
+            heuristic_fun = heuristic_constant
+        elif routing_option == "distance":
+            cost_fun = cost_distance
+            heuristic_fun = heuristic_straight_line
+        else: # time
+            cost_fun = cost_time
+            heuristic_fun = None # FIXME
+        print(m.astar(start_city, end_city, heuristic_fun, cost_fun, timeit))
