@@ -497,7 +497,7 @@ class Map:
                         continue
 
                 new_path = current.path[:]
-                new_path.append((next_city_obj, outgoing_road))
+                new_path.append((next_city, outgoing_road))
 
                 heappush(pq, (f, Visited(next_city, new_path, actual_cost)))
 
@@ -678,6 +678,26 @@ def middle_point(points):
 
     return (lat_dgr, long_dgr)
 
+def total_time(visiteds):
+    ret = 0
+    for (city, used_road) in visiteds.path:
+        ret += float(used_road.distance) / float(used_road.max_speed)
+    return ret
+
+def total_distance(visiteds):
+    ret = 0
+    for (city, used_road) in visiteds.path:
+        ret += used_road.distance
+    return ret
+
+def print_result(ret):
+    t = total_time(ret)
+    dist = total_distance(ret)
+    print
+    print dist, t,
+    for (city, _) in ret.path:
+        print city,
+
 
 ################################################################################
 ## Entry
@@ -722,9 +742,9 @@ if __name__ == "__main__":
         print("WARNING: BFS and DFS don't care about costs and heuristics, " + \
                 "routing option is ignored.")
         if routing_algorithm == "bfs":
-            print(m.bfs(start_city, end_city, timeit))
+            print_result(m.bfs(start_city, end_city, timeit))
         else: # dfs
-            print(m.dfs(start_city, end_city, timeit))
+            print_result(m.dfs(start_city, end_city, timeit))
     else:
         if routing_option == "segments":
             cost_fun = cost_segments
@@ -735,4 +755,4 @@ if __name__ == "__main__":
         else: # time
             cost_fun = cost_time
             heuristic_fun = heuristic_straight_line
-        print(m.astar(start_city, end_city, heuristic_fun, cost_fun, timeit))
+        print_result(m.astar(start_city, end_city, heuristic_fun, cost_fun, timeit))
