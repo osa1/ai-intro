@@ -2,9 +2,8 @@ import copy
 import itertools
 import time
 
-##
+################################################################################
 ## We define names as constants to 1) minimize typos 2) faster comparsions.
-##
 
 IRENE = "Irene"
 FRANK = "Frank"
@@ -28,9 +27,8 @@ PERSONS     = (IRENE, FRANK, GEORGE, HEATHER, JERRY)
 LOCATIONS   = (KIRKWOOD, LAKE, ORANGE, NORTH, MAXWELL)
 ITEMS       = (CANDELABRUM, BANISTER, DOORKNOB, ELEPHANT, AMPLIFIER)
 
-##
+################################################################################
 ## State
-##
 
 class State:
 
@@ -110,9 +108,8 @@ class State:
                   add_spaces(self.ordered_at(i), 12)  + " | " + \
                   add_spaces(self.received_at(i), 12)
 
-##
+################################################################################
 ## A constraint is a function from a State to a bool.
-##
 
 # TODO: One possible optimization here is to remove search_fails for persons,
 # because index for each person is fixed.
@@ -196,9 +193,8 @@ CONSTRAINTS = (constraint_1, constraint_2, constraint_3, constraint_4,
                constraint_5, constraint_6, constraint_7, constraint_8,
                constraint_9, constraint_10)
 
-##
+################################################################################
 ## Utilities
-##
 
 def search_fail(string, iterable):
     """Search given string in given iterable, fail with a RuntimeException if
@@ -218,9 +214,8 @@ def add_spaces(s, l):
         return s + ' ' * (l - len(s))
     return s
 
-##
+################################################################################
 ## Entry
-##
 
 def main():
     print
