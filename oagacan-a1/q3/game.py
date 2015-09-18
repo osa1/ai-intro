@@ -50,23 +50,23 @@ def loop(state):
                 elif event.key == pygame.K_RIGHT:
                     current_col = (current_col + 1) % state.size
 
-                state_updated = False
+                move = None
 
                 if event.key == pygame.K_w:
                     state = state.up(current_col)
-                    state_updated = True
+                    move = "up(" + str(current_col) + ")"
                 elif event.key == pygame.K_a:
                     state = state.left(current_row)
-                    state_updated = True
+                    move = "left(" + str(current_row) + ")"
                 elif event.key == pygame.K_s:
                     state = state.down(current_col)
-                    state_updated = True
+                    move = "down(" + str(current_col) + ")"
                 elif event.key == pygame.K_d:
                     state = state.right(current_row)
-                    state_updated = True
+                    move = "right(" + str(current_row) + ")"
 
-                if state_updated:
-                    print state.arr
+                if move:
+                    print move, state.arr
 
         screen.fill(black)
 
