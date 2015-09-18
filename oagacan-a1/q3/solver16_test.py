@@ -2,7 +2,7 @@ import solver16
 
 import unittest
 
-class TestMoveMethods(unittest.TestCase):
+class TestSolver(unittest.TestCase):
     def setUp(self):
         self.state = solver16.State(range(1, 17))
 
@@ -74,6 +74,19 @@ class TestMoveMethods(unittest.TestCase):
                 self.state.right(3),
                 solver16.State([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16, 13, 14, 15]))
 
+    def test_num_pos(self):
+        self.assertEqual(self.state.correct_pos(1), (0, 0))
+        self.assertEqual(self.state.correct_pos(2), (1, 0))
+        self.assertEqual(self.state.correct_pos(16), (3, 3))
+        self.assertEqual(self.state.correct_pos(11), (2, 2))
+        self.assertEqual(self.state.correct_pos(10), (1, 2))
+
+        smaller_state = solver16.State(range(1, 10))
+        self.assertEqual(smaller_state.correct_pos(9), (2, 2))
+        self.assertEqual(smaller_state.correct_pos(1), (0, 0))
+        # This one is bogus, but it still works:
+        self.assertEqual(smaller_state.correct_pos(10), (0, 3))
+
     def test_four_id(self):
         for i in range(4):
             self.assertEqual(self.state, self.state.right(i).right(i).right(i).right(i))
@@ -97,14 +110,15 @@ class TestMoveMethods(unittest.TestCase):
             # print
             self.assertIsNotNone(answer)
 
-    # def test_swap_3x3(self):
-    #     begin = [1, 6, 3, 4, 5, 2, 7, 8, 9]
-    #     state = solver16.State(begin)
-    #     # answer = solver16.astar(state, solver16.h1)
-    #     answer = solver16.brute_bfs(state)
-    #     print answer
-    #     print
-    #     self.assertIsNotNone(answer)
+    def test_swap_3x3(self):
+        begin = [1, 6, 3, 4, 5, 2, 7, 8, 9]
+        state = solver16.State(begin)
+        # answer = solver16.astar(state, solver16.print_heuristic(solver16.correct_row_col))
+        answer = solver16.bestfirst(state, solver16.print_heuristic(solver16.correct_row_col))
+        # answer = solver16.brute_bfs(state)
+        print answer
+        print
+        self.assertIsNotNone(answer)
 
     def test_swap_2x2(self):
         begin = [3, 2, 1, 4]

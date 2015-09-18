@@ -121,6 +121,11 @@ class State:
 
         return State(arr_copy, self.size, moves, self.cost + 1)
 
+    def correct_pos(self, num):
+        """Return correct (col, row) for a given number. Note that first tile
+        is (0, 0)."""
+        return ((num - 1) % self.size, (num - 1) / self.size)
+
     def solved(self):
         return self.arr == range(1, self.size * self.size + 1)
 
@@ -229,16 +234,76 @@ def astar(state0, heuristic):
 
                 heappush(pq, (current.cost + heuristic(next_state), next_state))
 
+
+################################################################################
+## Greedy best-first
+
+# TODO: Maybe make A* code parametric on used keys in priority queue and remove
+# duplication.
+
+def bestfirst(state0, heuristic):
+    from heapq import heappush, heappop
+
+    pq = [(0, state0)]
+
+    memo = {}
+
+    while len(pq) != 0:
+        current = heappop(pq)[1]
+
+        if current.solved():
+            return current
+
+        memo[current] = current
+
+        for i in range(current.size):
+            for meth in [State.down, State.right, State.up, State.left]:
+                next_state = meth(current, i)
+
+                next_state_seen = memo.get(next_state)
+                if next_state_seen:
+                    if next_state_seen.cost <= current.cost + 1:
+                        continue
+
+                heappush(pq, (heuristic(next_state), next_state))
+
 ################################################################################
 ## Heuristics
 
 def h1(state):
-    """Number of misplaced numbers."""
+    """Number of correctly placed numbers."""
     misplaced = 0
     for i in range(state.size * state.size):
         if state.arr[i] != i + 1:
             misplaced += 1
     return misplaced
+
+def correct_row_col(state):
+    correct = 0
+
+    for i in range(state.size * state.size):
+        num = state.arr[i]
+        (num_correct_col, num_correct_row) = state.correct_pos(num)
+
+        i_col = i % state.size
+        i_row = i / state.size
+
+        if i_col == num_correct_col:
+            correct += 1
+
+        if i_row == num_correct_row:
+            correct += 1
+
+    return len(state.arr) * 2 - correct
+
+def print_heuristic(heuristic):
+    def printer(state):
+        heuristic_score = heuristic(state)
+        print str(state)
+        print "Heuristic:", heuristic_score
+        return heuristic_score
+
+    return printer
 
 ################################################################################
 ## Entry
