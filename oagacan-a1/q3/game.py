@@ -90,6 +90,11 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
         # leaky file descriptor
         state = solver16.parse_state(open(sys.argv[1], "r"))
+    if len(sys.argv) < 2:
+        import random
+        l = range(1, 17)
+        random.shuffle(l)
+        state = solver16.State(l)
     else:
         state = solver16.State(map(int, sys.argv[1:]))
     print "initial state:", state.arr
