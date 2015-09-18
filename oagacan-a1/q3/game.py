@@ -89,10 +89,11 @@ def loop(state):
 
 
 if __name__ == "__main__":
+    print "len(sys.argv):", len(sys.argv)
     if len(sys.argv) == 2:
         # leaky file descriptor
         state = solver16.parse_state(open(sys.argv[1], "r"))
-    if len(sys.argv) < 2:
+    elif len(sys.argv) == 1:
         import random
         l = range(1, 17)
         random.shuffle(l)
