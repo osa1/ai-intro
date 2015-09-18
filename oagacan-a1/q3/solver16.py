@@ -15,7 +15,7 @@ class State:
     #   State([], [])
     def __init__(self, arr, size=None, moves=[], cost=0):
         self.arr = arr
-        self.size = size if size else int(math.sqrt(len(arr)))
+        self.size = int(size if size else math.sqrt(len(arr)))
         self.hash = State.hash(arr)
         self.moves = moves
         self.cost = cost
@@ -125,6 +125,12 @@ class State:
         """Return correct (col, row) for a given number. Note that first tile
         is (0, 0)."""
         return ((num - 1) % self.size, (num - 1) / self.size)
+
+    def num_at(self, col, row):
+        """First tile is again (0, 0)."""
+        assert col < self.size
+        assert row < self.size
+        return self.arr[row * self.size + col]
 
     def solved(self):
         return self.arr == range(1, self.size * self.size + 1)
@@ -322,4 +328,5 @@ def parse_state(f):
     return State(arr, size)
 
 if __name__ == "__main__":
+    # leaky file descriptor
     s = parse_state(open(sys.argv[1], "r"))
