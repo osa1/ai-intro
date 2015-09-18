@@ -1,4 +1,5 @@
 import sys, pygame
+import time
 import solver16
 
 pygame.init()
@@ -84,6 +85,7 @@ def loop(state):
                 screen.blit(text, (x_start, y_start))
 
         pygame.display.flip()
+        time.sleep(0.01)
 
 
 if __name__ == "__main__":
