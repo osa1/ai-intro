@@ -1,0 +1,16 @@
+# Written question 2
+
+It's not admissible. We prove it by showing a counterexample(e.g. an
+overestimated case).
+
+Suppose we have this state:
+
+    1 2 3
+    4 5 _
+    7 8 6
+
+We can solve this puzzle in one move, by moving 6 up. But the heuristic cost
+assigned to this state is 2: One number(6) smaller than 7 comes after 7,
+similarly for 8.
+
+So this heuristic overestimates, and so is not admissible.

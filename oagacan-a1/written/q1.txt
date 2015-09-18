@@ -1,0 +1,20 @@
+# Written question 1
+
+For 2x2 board, it's sufficient to show only for single starting state, because
+other states are all rotations of this initial state.
+
+X starts:
+
+1)   x _
+     _ _
+
+2)   x o           x _            x _
+     _ _           o _            _ o
+
+3)   x o    x o    x x    x _     x x    x _
+     x _    _ x    o _    o x     _ o    x o
+
+X loses in all cases.
+
+If O starts, same things happen, except we replace X's with O's and vice-versa.
+Which means that first player always loses.
