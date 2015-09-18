@@ -8,6 +8,21 @@ from collections import deque
 # and costs into account, and if we want to take those into account then we
 # won't be able to have the current implementation, can't have both.
 
+################################################################################
+## Some random notes about the problem
+## (see also NOTEs)
+#
+# - Best solution I could find for swapping two consecutive tiles consists of
+#   15 moves. Since we wrap around, the positions of these consecutive tiles
+#   don't matter. (but we may need to rotate moves if we want to swap in row
+#   instead of col etc.)
+#   TODO: Maybe mention how you do it here.
+#
+#   I believe 15 move is the minimum amount to swap to consecutive tiles.
+#
+#   UPDATE: Ops! Solved in 13 moves.
+#
+
 class State:
     # NOTE: It turns out keyword arguments suck. Try to guess what happens when
     # you call this constructor like:
@@ -84,7 +99,7 @@ class State:
             arr_copy[row_start + i] = temps[(self.size - 1 + i) % self.size]
 
         moves = self.moves[:]
-        moves.append("right" + str(row) + ")")
+        moves.append("right(" + str(row) + ")")
 
         return State(arr_copy, self.size, moves, self.cost + 1)
 
@@ -277,7 +292,8 @@ def bestfirst(state0, heuristic):
 ## Heuristics
 
 def h1(state):
-    """Number of correctly placed numbers."""
+    """Number of incorrectly placed numbers. This is not admissible, still
+    keeping this here for testing purposes."""
     misplaced = 0
     for i in range(state.size * state.size):
         if state.arr[i] != i + 1:
@@ -285,6 +301,8 @@ def h1(state):
     return misplaced
 
 def correct_row_col(state):
+    # Not sure if this is admissible? It's useless anyway, no need to waste
+    # time with proving.
     correct = 0
 
     for i in range(state.size * state.size):
@@ -301,6 +319,12 @@ def correct_row_col(state):
             correct += 1
 
     return len(state.arr) * 2 - correct
+
+def swap_heuristic(state):
+    """We know that we can swap two numbers in at most 13 steps. Calculate how
+    many swaps would be necessary to reach the goal, and multiply it with 13.
+    Pretty dumb but admissible heuristic."""
+    pass
 
 def print_heuristic(heuristic):
     def printer(state):
