@@ -1,5 +1,6 @@
 import sys
 import math
+import random
 from collections import deque
 
 # NOTE: Ideally I would implement wrapper classes for adding moves and costs,
@@ -21,6 +22,12 @@ from collections import deque
 #   I believe 15 move is the minimum amount to swap to consecutive tiles.
 #
 #   UPDATE: Ops! Solved in 13 moves.
+#
+# - My search implementation only considers one way in each direction. The
+#   reason is because even though my heuristics are consistent, repeated
+#   left-right moves etc. make the priority queue grow very faster. After
+#   finding a solution I'm combining moves to get a better solution. (e.g. if I
+#   have R1 R1 R1 I'm generating L1)
 #
 
 class State:
@@ -241,7 +248,9 @@ def astar(state0, heuristic):
             return current
 
         for i in range(current.size):
-            for meth in [State.down, State.right, State.up, State.left]:
+            meths = [State.down, State.right]
+            random.shuffle(meths)
+            for meth in meths:
                 next_state = meth(current, i)
                 heappush(pq, (current.cost + heuristic(next_state), next_state))
 
@@ -325,6 +334,39 @@ def print_heuristic(heuristic):
     return printer
 
 ################################################################################
+## Move optimization -- see notes at the beginning of the file
+
+def opt_moves(moves):
+    ret = []
+
+    i = 0
+    while (i < len(moves) - 2):
+        m1 = moves[i]
+        m2 = moves[i + 1]
+        if m1 == m2:
+            m3 = moves[i + 2]
+            if m3 == m2:
+                if m1[0] == "R":
+                    ret.append("L" + m1[1])
+                elif m1[0] == "D":
+                    ret.append("U" + m1[1])
+                else:
+                    assert False
+                i += 3
+            else:
+                ret.append(m1)
+                ret.append(m2)
+                i += 2
+        else:
+            ret.append(m1)
+            i += 1
+
+    if i > len(moves) - 3 and i < len(moves):
+        return ret + moves[i:]
+
+    return ret
+
+################################################################################
 ## Entry
 
 def parse_state(f):
@@ -344,6 +386,6 @@ if __name__ == "__main__":
     # leaky file descriptor
     s = parse_state(open(sys.argv[1], "r"))
     ret = astar(s, h1)
-    for move in ret.moves:
+    for move in opt_moves(ret.moves):
         print move,
     print

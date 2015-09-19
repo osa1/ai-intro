@@ -110,15 +110,15 @@ class TestSolver(unittest.TestCase):
             # print
             self.assertIsNotNone(answer)
 
-    def test_swap_3x3(self):
-        begin = [1, 6, 3, 4, 5, 2, 7, 8, 9]
-        state = solver16.State(begin)
-        # answer = solver16.astar(state, solver16.print_heuristic(solver16.correct_row_col))
-        answer = solver16.bestfirst(state, solver16.print_heuristic(solver16.correct_row_col))
-        # answer = solver16.brute_bfs(state)
-        print answer
-        print
-        self.assertIsNotNone(answer)
+    # def test_swap_3x3(self):
+    #     begin = [1, 6, 3, 4, 5, 2, 7, 8, 9]
+    #     state = solver16.State(begin)
+    #     # answer = solver16.astar(state, solver16.print_heuristic(solver16.correct_row_col))
+    #     # answer = solver16.bestfirst(state, solver16.h1)
+    #     # answer = solver16.brute_bfs(state)
+    #     print answer
+    #     print
+    #     self.assertIsNotNone(answer)
 
     def test_swap_2x2(self):
         begin = [3, 2, 1, 4]
@@ -143,6 +143,17 @@ class TestSolver(unittest.TestCase):
     #     print answer
     #     print
     #     self.assertIsNotNone(answer)
+
+    def test_opt_moves(self):
+        from solver16 import opt_moves
+        self.assertEqual([], [])
+        self.assertEqual(["R1"], opt_moves(["R1"]))
+        self.assertEqual(["R1", "D1"], opt_moves(["R1", "D1"]))
+        self.assertEqual(["L1"], opt_moves(["R1", "R1", "R1"]))
+        self.assertEqual(["U1"], opt_moves(["D1", "D1", "D1"]))
+        self.assertEqual(["U1", "D1"], opt_moves(["D1", "D1", "D1", "D1"]))
+        self.assertEqual(["U1", "D1"], opt_moves(["D1", "D1", "D1", "D1"]))
+        self.assertEqual(["U1", "D1", "L1"], opt_moves(["D1", "D1", "D1", "D1", "R1", "R1", "R1"]))
 
 if __name__ == "__main__":
     unittest.main()
