@@ -473,8 +473,6 @@ class Map:
         while len(pq) != 0:
             current = heappop(pq)[1]
 
-            visiteds[current.what] = current
-
             if current.what == end_city:
                 if timeit:
                     end = time.clock()
@@ -495,6 +493,10 @@ class Map:
                 if next_city_visited:
                     if next_city_visited.cost <= actual_cost:
                         continue
+                    else:
+                        visiteds[current.what] = current
+                else:
+                    visiteds[current.what] = current
 
                 new_path = current.path[:]
                 new_path.append((next_city, outgoing_road))
@@ -543,11 +545,10 @@ class Map:
 
                 next_city_visited = visiteds.get(next_city)
                 if next_city_visited:
-                    if next_city_visited.cost <= actual_cost:
-                        continue
+                    continue
 
                 new_path = current.path[:]
-                new_path.append((next_city_obj, outgoing_road))
+                new_path.append((next_city, outgoing_road))
 
                 heappush(pq, (actual_cost, Visited(next_city, new_path, actual_cost)))
 

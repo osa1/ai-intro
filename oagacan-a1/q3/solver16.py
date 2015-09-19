@@ -234,27 +234,16 @@ def astar(state0, heuristic):
 
     pq = [(0, state0)]
 
-    memo = {}
-
     while len(pq) != 0:
         current = heappop(pq)[1]
 
         if current.solved():
             return current
 
-        memo[current] = current
-
         for i in range(current.size):
             for meth in [State.down, State.right, State.up, State.left]:
                 next_state = meth(current, i)
-
-                next_state_seen = memo.get(next_state)
-                if next_state_seen:
-                    if next_state_seen.cost <= current.cost + 1:
-                        continue
-
                 heappush(pq, (current.cost + heuristic(next_state), next_state))
-
 
 ################################################################################
 ## Greedy best-first
