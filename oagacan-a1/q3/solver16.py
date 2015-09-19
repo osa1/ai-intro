@@ -83,7 +83,7 @@ class State:
             arr_copy[row_start + i] = temps[(i + 1) % self.size]
 
         moves = self.moves[:]
-        moves.append("left(" + str(row) + ")")
+        moves.append("L" + str(row + 1))
 
         return State(arr_copy, self.size, moves, self.cost + 1)
 
@@ -99,7 +99,7 @@ class State:
             arr_copy[row_start + i] = temps[(self.size - 1 + i) % self.size]
 
         moves = self.moves[:]
-        moves.append("right(" + str(row) + ")")
+        moves.append("R" + str(row + 1))
 
         return State(arr_copy, self.size, moves, self.cost + 1)
 
@@ -116,7 +116,7 @@ class State:
             arr_copy[col + self.size * i] = temps[(i + 1) % self.size]
 
         moves = self.moves[:]
-        moves.append("up(" + str(col) + ")")
+        moves.append("U" + str(col + 1))
 
         return State(arr_copy, self.size, moves, self.cost + 1)
 
@@ -132,7 +132,7 @@ class State:
             arr_copy[col + self.size * i] = temps[(self.size - 1 + i) % self.size]
 
         moves = self.moves[:]
-        moves.append("down(" + str(col) + ")")
+        moves.append("D" + str(col + 1))
 
         return State(arr_copy, self.size, moves, self.cost + 1)
 
@@ -343,3 +343,7 @@ def parse_state(f):
 if __name__ == "__main__":
     # leaky file descriptor
     s = parse_state(open(sys.argv[1], "r"))
+    ret = astar(s, h1)
+    for move in ret.moves:
+        print move,
+    print
