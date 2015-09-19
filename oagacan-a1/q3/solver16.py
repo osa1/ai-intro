@@ -23,6 +23,11 @@ from collections import deque
 #
 #   UPDATE: Ops! Solved in 13 moves.
 #
+#   UPDATE: Ops! The program started solving it faster. Current records:
+#     best_swap.txt:    9   moves
+#     best_swap_2.txt:  9   moves
+#     best_swap_3.txt:  11  moves
+#
 # - My search implementation only considers one way in each direction. The
 #   reason is because even though my heuristics are consistent, repeated
 #   left-right moves etc. make the priority queue grow very faster. After
@@ -385,7 +390,7 @@ def parse_state(f):
 if __name__ == "__main__":
     # leaky file descriptor
     s = parse_state(open(sys.argv[1], "r"))
-    ret = astar(s, h1)
+    ret = astar(s, correct_row_col)
     for move in opt_moves(ret.moves):
         print move,
     print
