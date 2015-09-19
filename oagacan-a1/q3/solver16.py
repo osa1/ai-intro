@@ -47,12 +47,14 @@ class State:
         self.moves = moves
         self.cost = cost
 
+        self.goal_hash = State.hash(range(1, len(arr) + 1))
+
     @staticmethod
     def hash(arr):
         exp = 1
         ret = 0
         for i in arr:
-            ret += i ^ exp
+            ret += i ** exp
             exp += 1
         return ret
 
@@ -322,6 +324,9 @@ def correct_row_col(state):
             correct += 1
 
     return len(state.arr) * 2 - correct
+
+def hash_heuristic(state):
+    return state.goal_hash - hash(state)
 
 def swap_heuristic(state):
     """We know that we can swap two numbers in at most 13 steps. Calculate how
