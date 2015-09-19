@@ -184,6 +184,7 @@ class City:
         self.name = name
         self.lat = lat
         self.long = long
+        self.average_speed = 0
 
     def __eq__(self, other):
         return self.name == other.name and \
@@ -374,11 +375,11 @@ class Map:
                     distance_needs_fixing.append(r)
 
         # we add each road twice but it's OK because we're calculating average
-        average_speed = total_speed / roads_with_numbers
+        self.average_speed = total_speed / roads_with_numbers
         # print "average_speed:", average_speed
 
         for road in speed_needs_fixing:
-            road.max_speed = average_speed
+            road.max_speed = self.average_speed
 
         for road in distance_needs_fixing:
             f = self.city_map[road.from_]
@@ -487,7 +488,7 @@ class Map:
                 next_city_obj = self.city_map[next_city]
 
                 actual_cost = current.cost + cost_fn(outgoing_road)
-                f = actual_cost + heuristic(next_city_obj, end_city_obj)
+                f = actual_cost + heuristic(next_city_obj, end_city_obj, self)
 
                 next_city_visited = visiteds.get(next_city)
                 if next_city_visited:
@@ -565,17 +566,22 @@ class Map:
 ################################################################################
 ## Heuristics
 
-def heuristic_constant(next_city, target_city):
+def heuristic_constant(next_city, target_city, state):
     """A heuristic that assigns same cost to every node(except the target,
     which is assigned 0). Effectively this makes A* same as BFS."""
     if target_city.name == next_city.name:
         return 0
     return 1
 
-def heuristic_straight_line(next_city, target_city):
+def heuristic_straight_line(next_city, target_city, state):
     """Straight line distance heuristic. Distance is calcuated using Haversine
     formula from latitude and longitudes."""
     return distance_miles(target_city.lat, target_city.long, next_city.lat, next_city.long)
+
+def heuristic_time(next_city, target_city, state):
+    return distance_miles(
+            target_city.lat, target_city.long, next_city.lat, next_city.long) \
+                    / state.average_speed
 
 ################################################################################
 ## Cost functions
@@ -596,7 +602,7 @@ def cost_segments(used_road):
 
 def cost_time(used_road):
     """Use when the cost is total time spent on the road."""
-    return used_road.distance / used_road.max_speed
+    return float(used_road.distance) / float(used_road.max_speed)
 
 ################################################################################
 ## Utilities
@@ -755,5 +761,5 @@ if __name__ == "__main__":
             heuristic_fun = heuristic_straight_line
         else: # time
             cost_fun = cost_time
-            heuristic_fun = heuristic_straight_line
+            heuristic_fun = heuristic_time
         print_result(m.astar(start_city, end_city, heuristic_fun, cost_fun, timeit))

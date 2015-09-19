@@ -55,7 +55,7 @@ class TestMoveMethods(unittest.TestCase):
 
     def astar_time(self, start, end):
         astar_result = self.m.astar(
-                start, end, route.heuristic_straight_line, route.cost_time)
+                start, end, route.heuristic_time, route.cost_time)
         self.assertIsNotNone(astar_result)
 
         uniform_result = self.m.uniform_cost(start, end, route.cost_time)
