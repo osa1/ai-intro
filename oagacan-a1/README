@@ -1,3 +1,70 @@
+# NOTES ABOUT SOLUTIONS
+
+I tried to document my code extensively, hopefully they explain every
+non-standard thing I do. Here are some other details.
+
+## Programming problem 1
+
+Program: q1/main.py
+
+I also have a Prolog implementation that I hacked just to test my
+implementation. (q1/main.pl)
+
+
+## Programming problem 2
+
+Program: q2/route.py
+
+I don't think it's possible to implement an admissible heuristic in this
+question, because of missing GPS locations of some cities and missing distances
+of some roads. The whole Quebec region is missing. In total we have 1052
+missing GPS locations(some of them are for connections rather than cities).
+Some of the cities with missing GPS info are connected to only one other
+city(which makes predicting a location hard). Roads with unknown distances and
+max speeds etc. makes things even worse.
+
+Before running the algorithm I fill all the missing information. I do it like this:
+
+- For cities with missing GPS information, I use middle point of it's
+  neighbors. If it has only one neighbor, then I make it's location same as
+  it's neighbor.
+
+- For roads with missing max speed, I use average max speed of all roads.
+
+- For roads with missing distances, I use straight line distance of two points.
+
+Then I run A*, bfs, dfs etc. (I also implemented uniform cost aka. Dijkstra's,
+but there's no way to use it from the command line. See route_test.py)
+
+BFS and DFS doesn't care about cost functions(distance, time etc.) since they
+just searched in the graph until they reach the goal node.
+
+For A* I have different cost functions and heuristics depending on the goal.
+(see code)
+
+
+## Programming problem 3
+
+Program: q3/solver16.py
+
+Unfortunately my program can solve only very simple cases(others take forever).
+This puzzle is very easy to solve(I can solve it in a minute most of the time),
+but finding an optimal solution using heuristics turned out to be very hard.
+
+Some other things I implemented:
+
+- game.py: I implemented the game just to experiment with some ideas and
+  manually check if my program returned a valid/correct solution. Requires
+  pygame.
+
+- My program works on arbitrary board sizes. Although it's having problems with
+  sizes >= 4. :)
+
+
+---
+
+# Original README
+
 This is a simple dataset of North American (though mostly U.S.) major roads.
 
 city-gps.txt contains one line per city, with three fields per line,
