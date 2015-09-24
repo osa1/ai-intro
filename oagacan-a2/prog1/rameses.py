@@ -16,7 +16,7 @@ class Grid:
     def __str__(self):
         lines = []
 
-        line_sep = "+" + "".join(list(itertools.repeat("-", self.size * 3 + (self.size - 1)))) +"+"
+        line_sep = "+" + "".join(itertools.repeat("-", self.size * 3 + (self.size - 1))) + "+"
         lines.append(line_sep)
 
         for row in range(self.size):
