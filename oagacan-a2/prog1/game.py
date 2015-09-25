@@ -1,4 +1,5 @@
 import pygame
+import re
 import sys
 import time
 
@@ -6,6 +7,8 @@ import rameses
 
 BLACK = 0, 0, 0
 WHITE = 255, 255, 255
+
+PGM_OUTPUT_RE = re.compile(r"\((\d),\s*(\d)\)")
 
 def mouse_grid_xy(cell_size):
     (mouse_x, mouse_y) = pygame.mouse.get_pos()
@@ -15,8 +18,13 @@ def mouse_grid(cell_size):
     (mouse_x, mouse_y) = pygame.mouse.get_pos()
     return (int(mouse_x / cell_size), int(mouse_y / cell_size))
 
+def parse_program_ouput(s):
+    ret = PGM_OUTPUT_RE.match(s)
+    return (int(ret.group(1)), int(ret.group(2)))
+
 def run_game(state, turn):
     import math
+    import subprocess
 
     pygame.init()
     font = pygame.font.Font(None, 36)
@@ -46,13 +54,31 @@ def run_game(state, turn):
     print "cell_size:", cell_size
 
     while True:
+
+        if not turn:
+            t = 100 # just big enough for now
+
+            # In theory, we don't need to create a subprocess here, we can just
+            # use the library we've already imported, but I need to measure the
+            # whole thing, e.g. process initialization, parsing command line
+            # args etc. since this is what's measured in the tournament.
+            begin = time.clock()
+            output = subprocess.check_output(
+                    ["python", "rameses.py", str(state.size), "".join(state.grid), str(t)])
+            (computer_x, computer_y) = parse_program_ouput(output)
+            end = time.clock()
+            print "Thought in %f seconds." % (end - begin)
+            state = state.move(computer_x, computer_y)
+            turn = True
+
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 return
             elif event.type == pygame.MOUSEBUTTONDOWN and turn:
                 (col, row) = mouse_grid(cell_size)
-                print "moving to", col, row
+                # print "moving to", col, row
                 state = state.move(col, row)
+                turn = False
 
         screen.fill(BLACK)
 
