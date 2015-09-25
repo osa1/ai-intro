@@ -27,13 +27,13 @@ class Grid:
         arr = ['.' for _ in xrange(size * size)]
         return cls(size, arr)
 
-    def move(self, x, y):
+    def move(self, col, row):
         "Return a new grid with the given move made. Copies the whole grid."
-        assert x < self.size
-        assert y < self.size
+        assert col < self.size
+        assert row < self.size
 
         new_arr = self.grid[:]
-        new_arr[y * self.size + x] = 'x'
+        new_arr[row * self.size + col] = 'x'
         return Grid(self.size, new_arr)
 
     def at_xy(self, col, row):
@@ -61,6 +61,9 @@ class Grid:
 
     def spanned_space(self):
         return (self.size * self.size) - self.available_space()
+
+    def valid_move_p(self, col, row):
+        return self.at_xy(col, row) == '.'
 
     # True  -> it's OK
     # False -> avoid
