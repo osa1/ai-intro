@@ -68,6 +68,12 @@ def run_game(state, turn):
             (computer_x, computer_y) = parse_program_ouput(output)
             end = time.clock()
             print "Thought in %f seconds." % (end - begin)
+
+            if not state.check_move_xy(computer_x, computer_y):
+                print "You win!!1"
+                state = state.move(computer_x, computer_y)
+                print state
+
             state = state.move(computer_x, computer_y)
             if not state.has_available_space():
                 print "You lost! Loser!"
