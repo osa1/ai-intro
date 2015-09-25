@@ -22,6 +22,11 @@ class Grid:
         else:
             self.grid = arg
 
+    @classmethod
+    def empty(cls, size):
+        arr = ['.' for _ in xrange(size * size)]
+        return cls(size, arr)
+
     def move(self, x, y):
         "Return a new grid with the given move made. Copies the whole grid."
         assert x < self.size
@@ -161,7 +166,7 @@ def run_game(state):
     while state.spanned_space() != state.size * state.size:
         (eval, move, state) = minimax(state, turn)
 
-        print "eval: %d, move: %s" % (eval, str(move))
+        print "turn: %s, eval: %d, move: %s" % (str(turn), eval, str(move))
         print state
 
         turn = not turn
@@ -171,31 +176,15 @@ def run_game(state):
 ################################################################################
 
 if __name__ == "__main__":
-    import argparse
+    # import argparse
 
-    arg_parser = argparse.ArgumentParser("Rameses player")
-    arg_parser.add_argument("board-size", type=int, nargs=1)
-    arg_parser.add_argument("board", type=str, nargs=1)
-    arg_parser.add_argument("time-limit", type=float, nargs=1)
+    # arg_parser = argparse.ArgumentParser("Rameses player")
+    # arg_parser.add_argument("board-size", type=int, nargs=1)
+    # arg_parser.add_argument("board", type=str, nargs=1)
+    # arg_parser.add_argument("time-limit", type=float, nargs=1)
 
-    args = vars(arg_parser.parse_args())
-    print args
-    grid = Grid(args["board-size"][0], args["board"][0])
-    print grid
-    print list(grid.available_spaces())
-    print grid.check_move_xy(2, 2)
-    print "available:", grid.available_space()
-    print "spanned:", grid.spanned_space()
-    print grid.move(2, 2)
-    print grid.move(0, 2)
-    print grid.move(1, 2)
-    print "== MINIMAX =="
-    print minimax(grid)
+    # args = vars(arg_parser.parse_args())
+    # print args
 
-    print "== MINIMAX, empty grid =="
-    grid = Grid(3, ".....x.xx")
-    print minimax(grid)
-
-
-    grid = Grid(3, ".........")
-    print run_game(grid)
+    grid = Grid.empty(5)
+    run_game(grid)
