@@ -45,6 +45,11 @@ class Grid:
                 if self.at_xy(col, row) == '.':
                     yield (col, row)
 
+    def has_available_space(self):
+        for _ in self.available_spaces():
+            return True
+        return False
+
     def good_moves(self):
         for (x, y) in self.available_spaces():
             if self.check_move_xy(x, y):

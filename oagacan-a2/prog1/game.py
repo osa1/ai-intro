@@ -69,6 +69,11 @@ def run_game(state, turn):
             end = time.clock()
             print "Thought in %f seconds." % (end - begin)
             state = state.move(computer_x, computer_y)
+            if not state.has_available_space():
+                print "You lost! Loser!"
+                print "I'm still decent enough to print the state for you"
+                print state
+                return
             turn = True
 
         for event in pygame.event.get():
@@ -76,8 +81,17 @@ def run_game(state, turn):
                 return
             elif event.type == pygame.MOUSEBUTTONDOWN and turn:
                 (col, row) = mouse_grid(cell_size)
+                if not state.check_move_xy(col, row):
+                    print "Are you a loser? You lost, bro! Can't move there."
+                    print "Just in case you want to study the position"
+                    print state.move(col, row)
+                    return
                 # print "moving to", col, row
                 state = state.move(col, row)
+                if not state.has_available_space():
+                    print "You win!!1"
+                    print state
+                    break
                 turn = False
 
         screen.fill(BLACK)
@@ -125,7 +139,7 @@ if __name__ == "__main__":
     # WOW!! This is ridiculous. Above I add the argument as "first-computer"
     # (note the hyphen, it's not underscore) but to read from the dictionary I
     # have to use underscore. This sucks! You're fired, Python!
-    turn = args["first_computer"]
+    turn = not args["first_computer"]
 
     # print state, turn
 
