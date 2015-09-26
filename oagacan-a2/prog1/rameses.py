@@ -232,9 +232,9 @@ def run_game(state, p1, p2, verbose=True):
     turn = True
     while state.spanned_space() != state.size * state.size:
         if turn:
-            (eval, move) = p1(state, turn=turn)
+            (eval, move) = p1(state)
         else:
-            (eval, move) = p2(state, turn=turn)
+            (eval, move) = p2(state)
 
         state.move_inplace(*move)
 
