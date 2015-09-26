@@ -34,8 +34,6 @@ class Grid:
             if self.grid[i] == 'x':
                 self.__hash |= 1 << i
 
-        print self.__hash
-
     @classmethod
     def empty(cls, size):
         arr = ['.' for _ in xrange(size * size)]
@@ -257,12 +255,10 @@ def simple_player(state, turn=1, timeit=False):
 
     if not max_move:
         # We couldn't add any moves, end of game. We just do some random move.
+        new_state_eval = state.size * state.size
         for move in state.available_spaces():
             # TODO: This is not quite random, should we collect available
             # spaces in a list and pick something random?
-            state.move_inplace(*move)
-            new_state_eval = state.spanned_space()
-            state.revert(*move)
             return (new_state_eval, move)
 
     return max_move
