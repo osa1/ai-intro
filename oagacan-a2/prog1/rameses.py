@@ -92,17 +92,20 @@ class Grid:
                 self.__check_diagonal_1(col, row) and \
                 self.__check_diagonal_2(col, row)
 
-    def available_space(self):
+    def good_space(self):
         return sum(1 for _ in self.good_moves())
 
     def all_space(self):
         return sum(1 for _ in self.available_spaces())
 
     def spanned_space(self):
-        return (self.size * self.size) - self.available_space()
+        return (self.size * self.size) - self.good_space()
 
     def valid_move_p(self, col, row):
         return self.at_xy(col, row) == '.'
+
+    def is_terminal(self):
+        return (self.spanned_space() == self.size * self.size)
 
     # True  -> it's OK
     # False -> avoid
@@ -224,7 +227,6 @@ def minimax(state, heuristic, turn=1, steps=0, timeit=False):
             # TODO: This is not quite random, should we collect available
             # spaces in a list and pick something random?
             state.move_inplace(*move)
-            # new_state_eval = (state.available_space() * steps) * turn
             new_state_eval = heuristic(state) * turn
             state.revert(*move)
             max_move = (new_state_eval, move)
@@ -248,7 +250,6 @@ def simple_player(state, turn=1, timeit=False):
 
     for move in state.good_moves():
         state.move_inplace(*move)
-        # new_state = state.move(*move)
         new_state_eval = state.spanned_space()
         state.revert(*move)
         if max_move == None or new_state_eval > max_move[0]:
@@ -260,7 +261,6 @@ def simple_player(state, turn=1, timeit=False):
             # TODO: This is not quite random, should we collect available
             # spaces in a list and pick something random?
             state.move_inplace(*move)
-            # new_state = state.move(*move)
             new_state_eval = state.spanned_space()
             state.revert(*move)
             return (new_state_eval, move)
@@ -280,15 +280,19 @@ def random_player(state, turn=1, timeit=False):
     return (0, random.choice(moves))
 
 ################################################################################
-## Heuristics
+# Heuristics
 
 def h_available_space(state):
-    return state.all_space()
+    return state.spanned_space()
+
+def h_terminal(state):
+    return int(not state.is_terminal())
 
 ################################################################################
 # Minimax players
 
 available_space_player = with_heuristic(h_available_space)
+terminal_state_player = with_heuristic(h_terminal)
 
 ################################################################################
 
