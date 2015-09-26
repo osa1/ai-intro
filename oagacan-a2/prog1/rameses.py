@@ -1,11 +1,18 @@
 # from heapq import heappop, heappush
 import itertools
+import sys
+import time
 
 ################################################################################
 ## NOTES
 
 # When we use boolean as an indicator of whose turn is this, True means it's
 # our turn.
+#
+# NOTE [Heuristics]
+#
+# - Don't have much here; one simple but useful heuristic might be just number
+#   of spaces that we can use. Moves that lead to losing don't count.
 
 ################################################################################
 
@@ -63,6 +70,9 @@ class Grid:
 
     def available_space(self):
         return sum(1 for _ in self.good_moves())
+
+    def all_space(self):
+        return sum(1 for _ in self.available_spaces())
 
     def spanned_space(self):
         return (self.size * self.size) - self.available_space()
@@ -133,53 +143,78 @@ class Grid:
 
 ################################################################################
 
-def eval_spanned_space(grid, turn):
-    assert turn != None
-    cost = grid.spanned_space()
-    if turn:
-        return cost
-    return -cost
+# TODO: Add a depth parameter and use heuristic after considering depth.
 
-def minimax(state, turn=True):
-    moves = []
+def minimax(state, turn=1, steps=0, timeit=False):
+    # TODO: We should probably maintain a stack instead of doing recursive
+    # calls, if we want to work on big states.
 
+    if timeit:
+        begin = time.clock()
+
+    max_move = None
+
+    # print "------------- turn:", turn
     for move in state.good_moves():
-        new_state = state.move(move[0], move[1])
-        new_state_eval = eval_spanned_space(state, turn)
-        if not turn:
-            new_state_eval = -new_state_eval
-        moves.append((new_state_eval, move, new_state))
+        new_state = state.move(*move)
+        (new_state_eval, _, _) = minimax(new_state, turn=-turn, steps=steps+1)
+        new_state_eval = - new_state_eval
+        # print "move:", move, "eval:", new_state_eval
+        if max_move == None or new_state_eval > max_move[0]:
+            max_move = (new_state_eval, move, new_state)
 
-    if len(moves) == 0:
+    if not max_move:
+        # (terminal state)
         # We couldn't add any moves, end of game. We just do some random move.
         for move in state.available_spaces():
             # TODO: This is not quite random, should we collect available
             # spaces in a list and pick something random?
-            new_state = state.move(move[0], move[1])
-            new_state_eval = eval_spanned_space(state, turn)
-            if turn:
-                return (new_state_eval, move, new_state)
-            return (-new_state_eval, move, new_state)
+            new_state = state.move(*move)
+            new_state_eval = (new_state.spanned_space() + steps) * turn
+            return (new_state_eval, move, new_state)
 
-    # TODO: One thing to do here might be to pick something random when we have
-    # multiples moves with same evals.
-    if turn:
-        return max(moves)
-    return min(moves)
+    if timeit:
+        end = time.clock()
+        print "Decided in %fs." % (end - begin)
 
-def run_game(state):
+    return max_move
+
+def seemingly_dumb_heuristic(state, turn=1, timeit=False):
+    max_move = None
+
+    for move in state.good_moves():
+        new_state = state.move(*move)
+        new_state_eval = new_state.spanned_space()
+        if max_move == None or new_state_eval > max_move[0]:
+            max_move = (new_state_eval, move, new_state)
+
+    if not max_move:
+        # We couldn't add any moves, end of game. We just do some random move.
+        for move in state.available_spaces():
+            # TODO: This is not quite random, should we collect available
+            # spaces in a list and pick something random?
+            new_state = state.move(*move)
+            new_state_eval = new_state.spanned_space()
+            return (new_state_eval, move, new_state)
+
+    return max_move
+
+def run_game(state, p1, p2):
     print state
 
     turn = True
     while state.spanned_space() != state.size * state.size:
-        (eval, move, state) = minimax(state, turn)
+        if turn:
+            (eval, move, state) = p1(state, turn=turn)
+        else:
+            (eval, move, state) = p2(state, turn=turn)
 
         print "turn: %s, eval: %d, move: %s" % (str(turn), eval, str(move))
         print state
 
         turn = not turn
 
-    print "%s wins." % turn
+    print "%s wins." % str(not turn)
 
 ################################################################################
 
@@ -191,9 +226,21 @@ if __name__ == "__main__":
     arg_parser.add_argument("board", type=str, nargs=1)
     arg_parser.add_argument("time-limit", type=float, nargs=1)
 
-    args = vars(arg_parser.parse_args())
+    # args = vars(arg_parser.parse_args())
     # print args
 
-    grid = Grid(args["board-size"][0], args["board"][0])
-    (_, move, new_state) = minimax(grid)
-    print move
+    # grid = Grid(args["board-size"][0], args["board"][0])
+    # (_, move, _) = minimax(grid, timeit=False)
+    # (_, move, _) = seemingly_dumb_heuristic(grid, timeit=True)
+    # print move
+
+    grid = Grid.empty(3)
+    print "\nFIRST GAME minimax[0] vs. minimax[0]"
+    run_game(grid, minimax, minimax)
+    print "\nSECOND GAME, dumb[0] vs. minimax[1]"
+    run_game(grid, seemingly_dumb_heuristic, minimax)
+    print "\nTHIRD GAME minimax[0] vs. dumb[1]"
+    run_game(grid, minimax, seemingly_dumb_heuristic)
+
+    # grid = Grid.empty(4)
+    # run_game(grid, seemingly_dumb_heuristic, minimax)

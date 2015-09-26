@@ -64,7 +64,8 @@ def run_game(state, turn):
             # args etc. since this is what's measured in the tournament.
             begin = time.clock()
             output = subprocess.check_output(
-                    ["python", "rameses.py", str(state.size), "".join(state.grid), str(t)])
+                    ["pypy", "rameses.py", str(state.size), "".join(state.grid), str(t)])
+            print "output", output
             (computer_x, computer_y) = parse_program_ouput(output)
             end = time.clock()
             print "Thought in %f seconds." % (end - begin)
