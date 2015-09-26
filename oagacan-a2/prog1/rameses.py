@@ -182,9 +182,18 @@ class Grid:
 
 ################################################################################
 
+def indent_lines(n, s):
+    import itertools
+    lines = s.split('\n')
+    spaces = "".join(itertools.repeat(' ', 4 * n))
+    sep = '\n' + spaces
+    return sep + sep.join(lines)
+
+################################################################################
+
 # TODO: Add a depth parameter and use heuristic after considering depth.
 
-def minimax(state, turn=1, steps=0, timeit=False):
+def minimax(state, heuristic, turn=1, steps=0, timeit=False):
     # TODO: We should probably maintain a stack instead of doing recursive
     # calls, if we want to work on big states.
 
@@ -193,15 +202,19 @@ def minimax(state, turn=1, steps=0, timeit=False):
 
     max_move = None
 
-    # print "------------- turn:", turn
+    # print (indent_lines(steps,
+    #     "minimax(turn: " + str(turn) + ") considering state:\n" + str(state)))
+
     for move in state.good_moves():
+        # print (indent_lines(steps, "considering move: " + str(move)))
+        # print (indent_lines(steps, "current max move: " + str(max_move)))
+
         state.move_inplace(*move)
-        # new_state = state.move(*move)
-        (new_state_eval, _) = minimax(state, turn=-turn, steps=steps+1)
+        (new_state_eval, _) = minimax(state, heuristic, turn=-turn, steps=steps+1)
         new_state_eval = - new_state_eval
         state.revert(*move)
-        # print "move:", move, "eval:", new_state_eval
         if max_move == None or new_state_eval > max_move[0]:
+            # print (indent_lines(steps, "updating max move"))
             max_move = (new_state_eval, move)
 
     if not max_move:
@@ -211,9 +224,13 @@ def minimax(state, turn=1, steps=0, timeit=False):
             # TODO: This is not quite random, should we collect available
             # spaces in a list and pick something random?
             state.move_inplace(*move)
-            new_state_eval = (state.spanned_space() + steps) * turn
+            # new_state_eval = (state.available_space() * steps) * turn
+            new_state_eval = heuristic(state) * turn
             state.revert(*move)
-            return (new_state_eval, move)
+            max_move = (new_state_eval, move)
+            break
+
+    # print (indent_lines(steps, "max move: " + str(max_move)))
 
     if timeit:
         end = time.clock()
@@ -221,7 +238,12 @@ def minimax(state, turn=1, steps=0, timeit=False):
 
     return max_move
 
-def seemingly_dumb_heuristic(state, turn=1, timeit=False):
+def with_heuristic(heuristic):
+    def minimax_w_heuristic(state, **kwargs):
+        return minimax(state, heuristic, **kwargs)
+    return minimax_w_heuristic
+
+def simple_player(state, turn=1, timeit=False):
     max_move = None
 
     for move in state.good_moves():
@@ -244,6 +266,31 @@ def seemingly_dumb_heuristic(state, turn=1, timeit=False):
             return (new_state_eval, move)
 
     return max_move
+
+def random_player(state, turn=1, timeit=False):
+    import random
+    # We only use state arguments, others are added to comply with the
+    # interface.
+    moves = list(state.good_moves())
+    if len(moves) != 0:
+        return (0, random.choice(moves))
+
+    # All of the moves result in a lose, still do something
+    moves = list(state.available_moves())
+    return (0, random.choice(moves))
+
+################################################################################
+## Heuristics
+
+def h_available_space(state):
+    return state.all_space()
+
+################################################################################
+# Minimax players
+
+available_space_player = with_heuristic(h_available_space)
+
+################################################################################
 
 def run_game(state, p1, p2, verbose=True):
     if verbose:
@@ -279,10 +326,12 @@ if __name__ == "__main__":
     arg_parser.add_argument("board", type=str, nargs=1)
     arg_parser.add_argument("time-limit", type=float, nargs=1)
 
-    args = vars(arg_parser.parse_args())
-    grid = Grid(args["board-size"][0], args["board"][0])
-    (_, move, _) = minimax(grid, timeit=False)
-    print move
+    # args = vars(arg_parser.parse_args())
+    # grid = Grid(args["board-size"][0], args["board"][0])
+    # (_, move, _) = minimax(grid, timeit=False)
+    # print move
 
-    # grid = Grid.empty(4)
-    # run_game(grid, seemingly_dumb_heuristic, minimax)
+    # grid = Grid.empty(3)
+    # run_game(grid, simple_player, available_space_player)
+    # run_game(grid, random_player, available_space_player)
+    # run_game(grid, available_space_player, random_player)
