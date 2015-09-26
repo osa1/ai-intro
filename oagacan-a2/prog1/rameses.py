@@ -96,7 +96,7 @@ class Grid:
                 return True
         return False
 
-    def __check_diagonal_1(self, row, col):
+    def __check_diagonal_1(self, col, row):
         "From top-left to bottom-right. True -> OK, False -> avoid."
         if row != col:
             return True
@@ -110,13 +110,19 @@ class Grid:
 
         return False
 
-    def __check_diagonal_2(self, row, col):
+    def __check_diagonal_2(self, col, row):
         "From top-right to bottom-left. True -> OK, False -> avoid."
         if row != self.size - 1 - col:
             return True
 
         for xy in xrange(self.size):
-            if self.at_xy(self.size - 1 - xy, xy) == '.':
+            col_to_check = self.size - 1 - xy
+            row_to_check = xy
+
+            if col_to_check == col and row_to_check == row:
+                continue
+
+            if self.at_xy(col_to_check, row_to_check) == '.':
                 return True
 
         return False
