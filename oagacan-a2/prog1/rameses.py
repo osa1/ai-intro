@@ -205,8 +205,9 @@ def seemingly_dumb_heuristic(state, turn=1, timeit=False):
 
     return max_move
 
-def run_game(state, p1, p2):
-    print state
+def run_game(state, p1, p2, verbose=True):
+    if verbose:
+        print state
 
     turn = True
     while state.spanned_space() != state.size * state.size:
@@ -215,12 +216,16 @@ def run_game(state, p1, p2):
         else:
             (eval, move, state) = p2(state, turn=turn)
 
-        print "turn: %s, eval: %d, move: %s" % (str(turn), eval, str(move))
-        print state
+        if verbose:
+            print "turn: %s, eval: %d, move: %s" % (str(turn), eval, str(move))
+            print state
 
         turn = not turn
 
-    print "%s wins." % str(not turn)
+    if verbose:
+        print "%s wins." % str(not turn)
+
+    return (not turn)
 
 ################################################################################
 
@@ -232,21 +237,10 @@ if __name__ == "__main__":
     arg_parser.add_argument("board", type=str, nargs=1)
     arg_parser.add_argument("time-limit", type=float, nargs=1)
 
-    # args = vars(arg_parser.parse_args())
-    # print args
-
-    # grid = Grid(args["board-size"][0], args["board"][0])
-    # (_, move, _) = minimax(grid, timeit=False)
-    # (_, move, _) = seemingly_dumb_heuristic(grid, timeit=True)
-    # print move
-
-    grid = Grid.empty(3)
-    print "\nFIRST GAME minimax[0] vs. minimax[0]"
-    run_game(grid, minimax, minimax)
-    print "\nSECOND GAME, dumb[0] vs. minimax[1]"
-    run_game(grid, seemingly_dumb_heuristic, minimax)
-    print "\nTHIRD GAME minimax[0] vs. dumb[1]"
-    run_game(grid, minimax, seemingly_dumb_heuristic)
+    args = vars(arg_parser.parse_args())
+    grid = Grid(args["board-size"][0], args["board"][0])
+    (_, move, _) = minimax(grid, timeit=False)
+    print move
 
     # grid = Grid.empty(4)
     # run_game(grid, seemingly_dumb_heuristic, minimax)

@@ -18,5 +18,15 @@ class TestRegression(unittest.TestCase):
         self.assertFalse(grid.check_move_xy(2, 1))
         self.assertFalse(grid.check_move_xy(1, 2))
 
+    def test_game1(self):
+        grid = rameses.Grid.empty(3)
+        self.assertTrue(rameses.run_game(
+            grid, rameses.minimax, rameses.seemingly_dumb_heuristic, verbose=False))
+
+    def test_game2(self):
+        grid = rameses.Grid.empty(3)
+        self.assertFalse(rameses.run_game(
+            grid, rameses.seemingly_dumb_heuristic, rameses.minimax, verbose=False))
+
 if __name__ == "__main__":
     unittest.main()
