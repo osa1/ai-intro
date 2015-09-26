@@ -29,6 +29,13 @@ class Grid:
         else:
             self.grid = arg
 
+        self.__hash = 0
+        for i in xrange(len(self.grid)):
+            if self.grid[i] == 'x':
+                self.__hash |= 1 << i
+
+        print self.__hash
+
     @classmethod
     def empty(cls, size):
         arr = ['.' for _ in xrange(size * size)]
@@ -47,14 +54,18 @@ class Grid:
         # assert col < self.size
         # assert row < self.size
 
-        self.grid[row * self.size + col] = 'x'
+        idx = row * self.size + col
+        self.grid[idx] = 'x'
+        self.__hash |= 1 << idx
 
     def revert(self, col, row):
         "This is for reverting moves, puts a '.'."
         # assert col < self.size
         # assert row < self.size
 
-        self.grid[row * self.size + col] = '.'
+        idx = row * self.size + col
+        self.grid[idx] = '.'
+        self.__hash &= ~ (1 << idx)
 
     def at_xy(self, col, row):
         return self.grid[row * self.size + col]
@@ -139,6 +150,15 @@ class Grid:
                 return True
 
         return False
+
+    def __hash__(self):
+        return self.__hash
+
+    def __eq__(self, other):
+        return self.__hash == other.__hash
+
+    def __ne__(self, other):
+        return self.__hash != other.__hash
 
     def __str__(self):
         lines = []
