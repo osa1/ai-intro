@@ -43,6 +43,19 @@ class Grid:
         new_arr[row * self.size + col] = 'x'
         return Grid(self.size, new_arr)
 
+    def move_inplace(self, col, row):
+        # assert col < self.size
+        # assert row < self.size
+
+        self.grid[row * self.size + col] = 'x'
+
+    def revert(self, col, row):
+        "This is for reverting moves, puts a '.'."
+        # assert col < self.size
+        # assert row < self.size
+
+        self.grid[row * self.size + col] = '.'
+
     def at_xy(self, col, row):
         return self.grid[row * self.size + col]
 
@@ -162,12 +175,14 @@ def minimax(state, turn=1, steps=0, timeit=False):
 
     # print "------------- turn:", turn
     for move in state.good_moves():
-        new_state = state.move(*move)
-        (new_state_eval, _, _) = minimax(new_state, turn=-turn, steps=steps+1)
+        state.move_inplace(*move)
+        # new_state = state.move(*move)
+        (new_state_eval, _) = minimax(state, turn=-turn, steps=steps+1)
         new_state_eval = - new_state_eval
+        state.revert(*move)
         # print "move:", move, "eval:", new_state_eval
         if max_move == None or new_state_eval > max_move[0]:
-            max_move = (new_state_eval, move, new_state)
+            max_move = (new_state_eval, move)
 
     if not max_move:
         # (terminal state)
@@ -175,9 +190,10 @@ def minimax(state, turn=1, steps=0, timeit=False):
         for move in state.available_spaces():
             # TODO: This is not quite random, should we collect available
             # spaces in a list and pick something random?
-            new_state = state.move(*move)
-            new_state_eval = (new_state.spanned_space() + steps) * turn
-            return (new_state_eval, move, new_state)
+            state.move_inplace(*move)
+            new_state_eval = (state.spanned_space() + steps) * turn
+            state.revert(*move)
+            return (new_state_eval, move)
 
     if timeit:
         end = time.clock()
@@ -189,19 +205,23 @@ def seemingly_dumb_heuristic(state, turn=1, timeit=False):
     max_move = None
 
     for move in state.good_moves():
-        new_state = state.move(*move)
-        new_state_eval = new_state.spanned_space()
+        state.move_inplace(*move)
+        # new_state = state.move(*move)
+        new_state_eval = state.spanned_space()
+        state.revert(*move)
         if max_move == None or new_state_eval > max_move[0]:
-            max_move = (new_state_eval, move, new_state)
+            max_move = (new_state_eval, move)
 
     if not max_move:
         # We couldn't add any moves, end of game. We just do some random move.
         for move in state.available_spaces():
             # TODO: This is not quite random, should we collect available
             # spaces in a list and pick something random?
-            new_state = state.move(*move)
-            new_state_eval = new_state.spanned_space()
-            return (new_state_eval, move, new_state)
+            state.move_inplace(*move)
+            # new_state = state.move(*move)
+            new_state_eval = state.spanned_space()
+            state.revert(*move)
+            return (new_state_eval, move)
 
     return max_move
 
@@ -212,9 +232,11 @@ def run_game(state, p1, p2, verbose=True):
     turn = True
     while state.spanned_space() != state.size * state.size:
         if turn:
-            (eval, move, state) = p1(state, turn=turn)
+            (eval, move) = p1(state, turn=turn)
         else:
-            (eval, move, state) = p2(state, turn=turn)
+            (eval, move) = p2(state, turn=turn)
+
+        state.move_inplace(*move)
 
         if verbose:
             print "turn: %s, eval: %d, move: %s" % (str(turn), eval, str(move))
