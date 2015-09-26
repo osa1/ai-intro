@@ -245,7 +245,7 @@ def run_game(state, p1, p2, verbose=True):
         turn = not turn
 
     if verbose:
-        print "%s wins." % str(not turn)
+        print "%s wins." % ("player 2" if turn else "player 1")
 
     return (not turn)
 
