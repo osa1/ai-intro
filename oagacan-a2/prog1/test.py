@@ -18,6 +18,13 @@ class TestSolver(unittest.TestCase):
         self.assertFalse(grid.check_move_xy(2, 1))
         self.assertFalse(grid.check_move_xy(1, 2))
 
+    def test_moves_list(self):
+        grid = rameses.Grid(3, "xx..xx...")
+        good_moves = list(grid.good_moves())
+        self.assertEqual([(0, 2)], good_moves)
+        all_moves = set(list(grid.available_spaces()))
+        self.assertEqual(set([(2, 0), (0, 1), (0, 2), (1, 2), (2, 2)]), all_moves)
+
     def test_game1(self):
         grid = rameses.Grid.empty(3)
         self.assertTrue(rameses.run_game(
