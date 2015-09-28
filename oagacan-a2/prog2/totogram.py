@@ -106,7 +106,7 @@ class Node:
 
         return ' '.join(buf)
 
-    def net_str(self, from_):
+    def __net_str(self, from_):
         def aux(indent, lines, single_edge):
             c = ' ' if single_edge else '|'
             ls = lines.split('\n')
@@ -118,7 +118,7 @@ class Node:
         if len(edges) == 0:
             return str(self.value)
 
-        strs = [ aux(1, edge.net_str(self), len(edges) == 1) for edge in edges ]
+        strs = [ aux(1, edge.__net_str(self), len(edges) == 1) for edge in edges ]
 
         value_str = str(self.value)
         value_space = 4 - len(value_str)
@@ -139,12 +139,12 @@ class Node:
         return '\n'.join(buf)
 
     def __str__(self):
-        return self.net_str(None)
+        return self.__net_str(None)
 
 
 ################################################################################
 
-def check_invariants(node):
+def check_invariants(node, print_net=False):
     """
     Does some sanity checking:
 
@@ -173,11 +173,15 @@ def check_invariants(node):
         edges_set = set(edges)
 
         if edges_n != 1 and edges_n != 3:
+            if print_net:
+                print node
             raise RuntimeError(
                     "Invariant violation: Found a node with %d edges.\n\t(node with value %d)" \
                             % (edges_n, node.value))
 
         if len(edges_set) != len(edges):
+            if print_net:
+                print node
             raise RuntimeError(
                     "Invariant violation: " + \
                             "Found a node with multiple edges connected to same node.\n\t" + \
@@ -185,6 +189,8 @@ def check_invariants(node):
 
         for edge in edges:
             if node not in edge.edges():
+                if print_net:
+                    print node
                 raise RuntimeError(
                         "Invariant violation: Neighbor node is not connected to current node.\n\t" + \
                                 "(current node: node with value %d," + \
