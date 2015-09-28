@@ -3,11 +3,11 @@ import itertools
 ################################################################################
 
 class Node:
-    def __init__(self, value, edge1=None, edge2=None, edge3=None):
+    def __init__(self, value):
         self.value = value
-        self.edge1 = edge1
-        self.edge2 = edge2
-        self.edge3 = edge3
+        self.edge1 = None
+        self.edge2 = None
+        self.edge3 = None
 
     def edges(self):
         return filter(None, [self.edge1, self.edge2, self.edge3])
@@ -118,7 +118,7 @@ class Node:
         if len(edges) == 0:
             return str(self.value)
 
-        strs = [ aux(1, edge.__net_str(self), len(edges) == 1) for edge in edges ]
+        strs = [ aux(1, edge.__net_str(self), edge == edges[-1]) for edge in edges ]
 
         value_str = str(self.value)
         value_space = 4 - len(value_str)
@@ -141,6 +141,42 @@ class Node:
     def __str__(self):
         return self.__net_str(None)
 
+
+################################################################################
+
+def init_graph(k):
+    assert k > 0
+    if k == 1:
+        return Node(1)
+
+    val = 1
+    (node_1, val) = init_graph_aux(k - 1, val)
+    (node_2, val) = init_graph_aux(k - 1, val)
+    (node_3, val) = init_graph_aux(k - 1, val)
+
+    node = Node(val)
+
+    node.connect(node_1)
+    node.connect(node_2)
+    node.connect(node_3)
+
+    return node
+
+def init_graph_aux(k, val):
+    assert k > 0
+
+    if k == 1:
+        return (Node(val), val + 1)
+
+    (node_1, val) = init_graph_aux(k - 1, val)
+    (node_2, val) = init_graph_aux(k - 1, val)
+
+    node = Node(val)
+
+    node.connect(node_1)
+    node.connect(node_2)
+
+    return (node, val + 1)
 
 ################################################################################
 
@@ -238,3 +274,10 @@ if __name__ == "__main__":
     print
 
     check_invariants(node1)
+
+    print "==="
+    print init_graph(1)
+    print "==="
+    print init_graph(2)
+    print "==="
+    print init_graph(3)

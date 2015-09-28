@@ -25,5 +25,11 @@ class Test(unittest.TestCase):
         for node in [node1, node2, node3, node4, node2_1, node2_2]:
             check_invariants(node, True)
 
+    def testInitialization(self):
+        # init_graph(1) fails because it has 0 edges.
+        for i in range(2, 8):
+            g = init_graph(i)
+            check_invariants(g)
+
 if __name__ == "__main__":
     unittest.main()
