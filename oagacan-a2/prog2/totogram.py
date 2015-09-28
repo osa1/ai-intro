@@ -7,6 +7,22 @@ class Node:
         self.edge2 = edge2
         self.edge3 = edge3
 
+    def show_bfs(self):
+        "Show the tree in breadth-first order."
+        from collections import deque
+
+        queue = deque([self])
+
+        buf = []
+        while len(queue) != 0:
+            n = queue.popleft()
+            buf.append(str(n.value))
+            for edge in [n.edge1, n.edge2, n.edge3]:
+                if edge:
+                    queue.append(edge)
+
+        return ' '.join(buf)
+
     def __str__(self):
         def aux(indent, lines):
             ls = lines.split('\n')
@@ -54,3 +70,5 @@ if __name__ == "__main__":
     node3 = Node(3, node3_1, node3_2, node3_3)
     node4 = Node(4, node3, node2, node1)
     print node4
+
+    print node4.show_bfs()
