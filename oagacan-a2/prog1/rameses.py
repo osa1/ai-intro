@@ -278,9 +278,13 @@ def random_player(state, timeit=False):
 ################################################################################
 # Heuristics
 
+# This heuristic makes almost no sense, but leaving here for testing purposes.
 def h_available_space(state):
-    return state.spanned_space()
+    return state.good_space()
 
+# I think this is the perfect heuristic, but it's almost useless since it
+# doesn't approximate. To this heuristic all states except terminal ones are
+# equal.
 def h_terminal(state):
     if state.is_terminal():
         return -10
