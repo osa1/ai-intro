@@ -194,7 +194,7 @@ def indent_lines(n, s):
 
 # TODO: Add a depth parameter and use heuristic after considering depth.
 
-def minimax(state, heuristic, turn=1, steps=0, timeit=False):
+def minimax(state, heuristic, steps=0, timeit=False):
     # TODO: We should probably maintain a stack instead of doing recursive
     # calls, if we want to work on big states.
 
@@ -204,14 +204,14 @@ def minimax(state, heuristic, turn=1, steps=0, timeit=False):
     max_move = None
 
     # print (indent_lines(steps,
-    #     "minimax(turn: " + str(turn) + ") considering state:\n" + str(state)))
+    #     "minimax considering state:\n" + str(state)))
 
     for move in state.good_moves():
         # print (indent_lines(steps, "considering move: " + str(move)))
         # print (indent_lines(steps, "current max move: " + str(max_move)))
 
         state.move_inplace(*move)
-        (new_state_eval, _) = minimax(state, heuristic, turn=-turn, steps=steps+1)
+        (new_state_eval, _) = minimax(state, heuristic, steps=steps+1)
         new_state_eval = - new_state_eval
         state.revert(*move)
         if max_move == None or new_state_eval > max_move[0]:
@@ -243,7 +243,7 @@ def with_heuristic(heuristic):
         return minimax(state, heuristic, **kwargs)
     return minimax_w_heuristic
 
-def simple_player(state, turn=1, timeit=False):
+def simple_player(state, timeit=False):
     max_move = None
 
     for move in state.good_moves():
@@ -263,7 +263,7 @@ def simple_player(state, turn=1, timeit=False):
 
     return max_move
 
-def random_player(state, turn=1, timeit=False):
+def random_player(state, timeit=False):
     import random
     # We only use state arguments, others are added to comply with the
     # interface.
@@ -282,13 +282,17 @@ def h_available_space(state):
     return state.spanned_space()
 
 def h_terminal(state):
-    return int(not state.is_terminal())
+    if state.is_terminal():
+        return -10
+    else:
+        return 0
 
 ################################################################################
 # Minimax players
 
 available_space_player = with_heuristic(h_available_space)
 terminal_state_player = with_heuristic(h_terminal)
+main_player = terminal_state_player
 
 ################################################################################
 
@@ -326,10 +330,10 @@ if __name__ == "__main__":
     arg_parser.add_argument("board", type=str, nargs=1)
     arg_parser.add_argument("time-limit", type=float, nargs=1)
 
-    # args = vars(arg_parser.parse_args())
-    # grid = Grid(args["board-size"][0], args["board"][0])
-    # (_, move, _) = minimax(grid, timeit=False)
-    # print move
+    args = vars(arg_parser.parse_args())
+    grid = Grid(args["board-size"][0], args["board"][0])
+    (_, move) = terminal_state_player(grid, timeit=False)
+    print move
 
     # grid = Grid.empty(3)
     # run_game(grid, simple_player, available_space_player)

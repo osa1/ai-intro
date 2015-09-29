@@ -28,12 +28,12 @@ class TestSolver(unittest.TestCase):
     def test_game1(self):
         grid = rameses.Grid.empty(3)
         self.assertTrue(rameses.run_game(
-            grid, rameses.available_space_player, rameses.simple_player, verbose=False))
+            grid, rameses.main_player, rameses.simple_player, verbose=False))
 
     def test_game2(self):
         grid = rameses.Grid.empty(3)
         self.assertFalse(rameses.run_game(
-            grid, rameses.simple_player, rameses.available_space_player, verbose=False))
+            grid, rameses.simple_player, rameses.main_player, verbose=False))
 
     # def test_game3(self):
     #     grid = rameses.Grid.empty(3)
@@ -73,7 +73,7 @@ class TestSolver(unittest.TestCase):
         grid = rameses.Grid.empty(3)
         grid.move_inplace(0, 0)
         grid.move_inplace(1, 0)
-        move = rameses.available_space_player(grid)[1]
+        move = rameses.main_player(grid)[1]
         self.assertNotEqual((0, 1), move)
 
     def test_minimax_stupidity_2(self):
@@ -81,7 +81,7 @@ class TestSolver(unittest.TestCase):
         grid = rameses.Grid.empty(3)
         grid.move_inplace(0, 0)
         grid.move_inplace(0, 1)
-        move = rameses.available_space_player(grid)[1]
+        move = rameses.main_player(grid)[1]
         self.assertNotEqual((1, 0), move)
 
     def test_minimax_stupidity_3(self):
@@ -89,7 +89,7 @@ class TestSolver(unittest.TestCase):
         grid.move_inplace(0, 0)
         grid.move_inplace(1, 0)
         grid.move_inplace(1, 1)
-        move = rameses.available_space_player(grid)[1]
+        move = rameses.main_player(grid)[1]
         # (0, 1) is winning move here
         self.assertEqual((0, 1), move)
 
