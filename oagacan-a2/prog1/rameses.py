@@ -225,7 +225,7 @@ def minimax(state, heuristic, turn=1, steps=0, timeit=False):
             # TODO: This is not quite random, should we collect available
             # spaces in a list and pick something random?
             state.move_inplace(*move)
-            new_state_eval = heuristic(state) * turn
+            new_state_eval = heuristic(state)
             state.revert(*move)
             max_move = (new_state_eval, move)
             break
