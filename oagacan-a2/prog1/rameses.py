@@ -4,17 +4,6 @@ import sys
 import time
 
 ################################################################################
-## NOTES
-
-# When we use boolean as an indicator of whose turn is this, True means it's
-# our turn.
-#
-# NOTE [Heuristics]
-#
-# - Don't have much here; one simple but useful heuristic might be just number
-#   of spaces that we can use. Moves that lead to losing don't count.
-
-################################################################################
 
 class Grid:
     def __init__(self, size, arg):
@@ -192,56 +181,80 @@ def indent_lines(n, s):
 
 ################################################################################
 
-# TODO: Add a depth parameter and use heuristic after considering depth.
+# Note [Implementing minimax recursively]
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# Instead of maintaining a stack I'm using recursive implementation here. The
+# reason is becaue it doesn't matter, because IMO you never need to consider
+# 200 moves ahead etc. because:
+#
+# 1. It takes forever.
+#
+# 2. If you have that many empty space on the board, you can just do a random,
+#    safe move. No need to consider that many moves ahead in this game.
 
-def minimax(state, heuristic, steps=0, timeit=False):
-    # TODO: We should probably maintain a stack instead of doing recursive
-    # calls, if we want to work on big states.
+# Creating this class to avoid horrible wrapper functions.
+class Minimax:
+    def __init__(self, heuristic, max_depth=sys.maxint):
+        self.heuristic = heuristic
+        self.max_depth = max_depth
 
-    if timeit:
-        begin = time.clock()
+    def __call__(self, state, depth=None, steps=0, timeit=False):
+        if depth == None:
+            depth = self.max_depth
 
-    max_move = None
+        if timeit:
+            begin = time.clock()
 
-    # print (indent_lines(steps,
-    #     "minimax considering state:\n" + str(state)))
+        max_move = None
 
-    for move in state.good_moves():
-        # print (indent_lines(steps, "considering move: " + str(move)))
-        # print (indent_lines(steps, "current max move: " + str(max_move)))
+        # print (indent_lines(steps,
+        #     "minimax considering state:\n" + str(state)))
 
-        state.move_inplace(*move)
-        (new_state_eval, _) = minimax(state, heuristic, steps=steps+1)
-        new_state_eval = - new_state_eval
-        state.revert(*move)
-        if max_move == None or new_state_eval > max_move[0]:
-            # print (indent_lines(steps, "updating max move"))
-            max_move = (new_state_eval, move)
+        # This implementation is not great, ideally we'd want to use heuristic
+        # if depth = 0 or we're in a terminal state, but checking for terminal
+        # state is expensive enough, and more importantly, it involves
+        # generating good_moves(), which we do it here in any case. So what we
+        # do is instead we generate good_moves(), and if doesn't generate
+        # anything we know it's terminal state.
+        #
+        # Furthermore, all terminal states are equally bad for us, so if a move
+        # leads to a terminal state, we just return MIN_INT instead of actually
+        # calling the heuristic. Heuristic is only used when depth = 0 and
+        # we're not at a terminal state. (which to me makes perfect sense, but
+        # some of the resources like Wikipedia doesn't use it this way)
 
-    if not max_move:
-        # (terminal state)
-        # We couldn't add any moves, end of game. We just do some random move.
-        for move in state.available_spaces():
-            # TODO: This is not quite random, should we collect available
-            # spaces in a list and pick something random?
+        for move in state.good_moves():
+            # print (indent_lines(steps, "considering move: " + str(move)))
+            # print (indent_lines(steps, "current max move: " + str(max_move)))
             state.move_inplace(*move)
-            new_state_eval = heuristic(state)
+
+            if depth == 0:
+                new_state_eval = self.heuristic(state)
+            else:
+                (new_state_eval, _) = self.__call__(
+                        state, depth=depth-1, steps=steps+1, timeit=timeit)
+                new_state_eval = - new_state_eval
+
             state.revert(*move)
-            max_move = (new_state_eval, move)
-            break
+            if max_move == None or new_state_eval > max_move[0]:
+                # print (indent_lines(steps, "updating max move"))
+                max_move = (new_state_eval, move)
 
-    # print (indent_lines(steps, "max move: " + str(max_move)))
+        if not max_move:
+            # (terminal state)
+            # We couldn't add any moves, end of game.
+            for move in state.available_spaces():
+                max_move = (-sys.maxint, move)
+                break
 
-    if timeit:
-        end = time.clock()
-        print "Decided in %fs." % (end - begin)
+        # print (indent_lines(steps, "max move: " + str(max_move)))
 
-    return max_move
+        if timeit:
+            end = time.clock()
+            print "Decided in %fs." % (end - begin)
 
-def with_heuristic(heuristic):
-    def minimax_w_heuristic(state, **kwargs):
-        return minimax(state, heuristic, **kwargs)
-    return minimax_w_heuristic
+        return max_move
 
 def simple_player(state, timeit=False):
     max_move = None
@@ -255,13 +268,27 @@ def simple_player(state, timeit=False):
 
     if not max_move:
         # We couldn't add any moves, end of game. We just do some random move.
-        new_state_eval = state.size * state.size
         for move in state.available_spaces():
-            # TODO: This is not quite random, should we collect available
-            # spaces in a list and pick something random?
-            return (new_state_eval, move)
+            # Not quite random but whatever.
+            return (-sys.maxint, move)
 
     return max_move
+
+def quick_player(state, timeit=False):
+    # Quick player tries to play quick and smart. He thinks that for boards
+    # with size > 4, first moves can be just almost random. He just makes sure
+    # that he won't do super stupid things(like moving to the only place that
+    # makes him lose while there is a dozen free places), but doesn't consider
+    # more than one move ahead.
+    #
+    # After game comes closer to an end, it starts actually thinking. Considers
+    # increasingly more moves ahead.
+    best_move = consider_depth(state, 10)
+
+    if not best_move:
+        return simple_player(state)
+
+    return best_move
 
 def random_player(state, timeit=False):
     import random
@@ -288,15 +315,22 @@ def h_available_space(state):
 def h_terminal(state):
     if state.is_terminal():
         return -10
-    else:
-        return 0
+    return 0
+
+def h_terminal_available(state):
+    if state.is_terminal():
+        return -10
+    return state.spanned_space()
 
 ################################################################################
 # Minimax players
 
-available_space_player = with_heuristic(h_available_space)
-terminal_state_player = with_heuristic(h_terminal)
-main_player = terminal_state_player
+available_space_player = Minimax(h_available_space)
+terminal_state_player = Minimax(h_terminal)
+terminal_state_player_2 = Minimax(h_terminal_available)
+# main_player = terminal_state_player
+main_player = terminal_state_player_2
+main_player.max_depth = 3
 
 ################################################################################
 
@@ -336,7 +370,7 @@ if __name__ == "__main__":
 
     args = vars(arg_parser.parse_args())
     grid = Grid(args["board-size"][0], args["board"][0])
-    (_, move) = terminal_state_player(grid, timeit=False)
+    (_, move) = main_player(grid, timeit=False)
     print move
 
     # grid = Grid.empty(3)
