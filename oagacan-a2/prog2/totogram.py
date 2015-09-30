@@ -1,4 +1,8 @@
 import itertools
+import multiprocessing
+import random
+import sys
+import time
 
 ################################################################################
 #
@@ -23,8 +27,6 @@ import itertools
 # optimize search and test functions as much as possible. I run the search for
 # 10 seconds, and record the best solution.
 #
-#
-
 ################################################################################
 
 class Node:
@@ -249,7 +251,6 @@ def gen_graph_aux(k, lst):
     return node
 
 def gen_random_graph(k):
-    import random
     lst = gen_lst(k)
     random.shuffle(lst)
     return gen_graph(k, lst)
@@ -310,12 +311,151 @@ def check_invariants(node, print_net=False):
 
 ################################################################################
 
-def init_and_search():
-    pass
+min_score = sys.maxint
+min_state = None
+iterations = 0
+
+def process_states(k, states):
+    global min_score
+    global min_state
+    global iterations
+
+    for state in states:
+        iterations += 1
+        g = gen_graph(k, list(state))
+        g_score = g.score()
+        if g_score < min_score:
+            min_score = g_score
+            min_state = state
+
+    return min_state
+
+def handle_msg(msg, pipe):
+    if msg[0] == PROCESS_STATE:
+        # print "processing state"
+        process_states(msg[1], msg[2])
+        pipe.send(None) # signal
+
+    elif msg[0] == RETURN:
+        # print "returning"
+        pipe.send((min_state, iterations))
+        raise EOFError
+
+def mainloop(pipe):
+    while True:
+        try:
+            handle_msg(pipe.recv(), pipe)
+        except EOFError:
+            return
+
+################################################################################
+# Parallel searcher
+
+PROCESS_STATE = 1
+RETURN = 2
+
+def run_parallel(k, timeout):
+    cpus = multiprocessing.cpu_count()
+    print "CPUs:", cpus
+    print "k:", k
+
+
+    print "Creating %d processes for parallel processing." % cpus
+
+    # Can't use multiprocessing.Pool() because of some annoying limitations of
+    # that class. See NOTE [Parallelizing the search].
+
+    processes = []
+
+    for _ in xrange(cpus):
+        parent_conn, child_conn = multiprocessing.Pipe()
+        p = multiprocessing.Process(target=mainloop, args=(child_conn,))
+        p.start()
+        processes.append((p, parent_conn))
+
+    print "Setting up initial state."
+    lst = gen_lst(k)
+    random.shuffle(lst)
+    perms = itertools.permutations(lst)
+
+    print "Will keep sending tasks for about %d seconds." % timeout
+    begin = time.time()
+    dots = 0
+    while (time.time() - begin) < timeout:
+        sys.stdout.write("\rProcessing" + ''.join(list(itertools.repeat('.', dots))))
+        sys.stdout.flush()
+        dots += 1
+
+        for (p, pipe) in processes:
+            # print "Sending task to process %s." % str(p.pid)
+            worker_data = list(itertools.islice(perms, 0, 1000))
+            pipe.send((PROCESS_STATE, k, worker_data))
+
+        for (_, pipe) in processes:
+            pipe.recv() # just a signal
+
+    print
+
+    for (p, pipe) in processes:
+        pipe.send((RETURN,))
+
+    rets = [ pipe.recv() for (_, pipe) in processes ]
+
+    iterations = 0
+    graphs = []
+    for (state, iters) in rets:
+        iterations += iters
+        graphs.append(gen_graph(k, list(state)))
+
+    for (p, pipe) in processes:
+        p.join()
+
+    min_ret_score = sys.maxint
+    min_ret = None
+    for g in graphs:
+        score = g.score()
+        if score < min_ret_score:
+            min_ret_score = score
+            min_ret = g
+
+    return (min_ret, iterations)
+
+################################################################################
+# Sequential searcher
+
+def run_sequential(k, timeout):
+    lst = gen_lst(k)
+    random.shuffle(lst)
+    perms = itertools.permutations(lst)
+
+    min_score = sys.maxint
+    min_state = None
+    iterations = 0
+
+    begin = time.time()
+    for state in perms:
+        if time.time() - begin > timeout:
+            break
+
+        iterations += 1
+
+        g = gen_graph(k, list(state))
+        score = g.score()
+        if score < min_score:
+            min_score = score
+            min_state = g
+
+    return (min_state, iterations)
 
 ################################################################################
 
 if __name__ == "__main__":
-    lst = gen_random_graph(3)
-    print lst
-    print lst.show_bfs()
+    timeout = 3
+
+    k = int(sys.argv[1])
+    (min_ret, iterations) = run_parallel(k, timeout)
+    # (min_ret, iterations) = run_sequential(k, timeout)
+
+    print min_ret
+    print "score:", min_ret.score()
+    print "iterations:", iterations
