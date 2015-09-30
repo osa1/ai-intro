@@ -1,6 +1,31 @@
 import itertools
 
 ################################################################################
+#
+# Here I'm collecting all the NOTEs as per the request from previous
+# assignment. In the code I'll refer to NOTEs listed here in relevant parts.
+#
+# I did some research on graph colorings and I believe this problem is named
+# "Hamiltonian coloring", or at least "hamiltonian coloring" was the thing that
+# looked most similar. In any case, all of the papers I found were
+# incomprehensible, so I had no luck finding relevant algorithms online.
+#
+# One relevant concept is "detour distance", which basically means longest path
+# from node A to B. If we have an edge from A to B named E, we do
+# E.val = abs(A.val - B.val), and then we try to minimize maximum detour
+# distance in our graph.
+#
+# NOTE [How I test it]
+# ~~~~~~~~~~~~~~~~~~~~
+#
+# I'm not even sure if there's a P algorithm for testing for optimality of
+# results, and I'm not going to spend time on this. Instead here I try to
+# optimize search and test functions as much as possible. I run the search for
+# 10 seconds, and record the best solution.
+#
+#
+
+################################################################################
 
 class Node:
     def __init__(self, value):
@@ -90,21 +115,27 @@ class Node:
 
         return score
 
-    def show_bfs(self):
-        "Show the tree in breadth-first order."
+    def bfs_list(self):
+        "Generate a list representation of graph, using breadth-first order."
         from collections import deque
 
         queue = deque([self])
 
         buf = []
+        visiteds = set()
         while len(queue) != 0:
             n = queue.popleft()
-            buf.append(str(n.value))
+            visiteds.add(n.value)
+            buf.append(n.value)
             for edge in [n.edge1, n.edge2, n.edge3]:
-                if edge:
+                if edge and edge.value not in visiteds:
                     queue.append(edge)
 
-        return ' '.join(buf)
+        return buf
+
+    def show_bfs(self):
+        "Show the tree in breadth-first order."
+        return ' '.join(map(str, self.bfs_list()))
 
     def __net_str(self, from_):
         def aux(indent, lines, single_edge):
@@ -150,6 +181,7 @@ def init_graph(k):
         return Node(1)
 
     val = 1
+
     (node_1, val) = init_graph_aux(k - 1, val)
     (node_2, val) = init_graph_aux(k - 1, val)
     (node_3, val) = init_graph_aux(k - 1, val)
@@ -177,6 +209,50 @@ def init_graph_aux(k, val):
     node.connect(node_2)
 
     return (node, val + 1)
+
+def gen_lst(k):
+    "Generate a list of ordered numbers for the tree with depth k."
+    if k == 1:
+        return [1]
+
+    nodes = 3 * ((2 ** (k - 1)) - 1) + 1
+    return range(1, nodes + 1)
+
+def gen_graph(k, lst):
+    if k == 1:
+        return Node(lst.pop())
+
+    node_1 = gen_graph_aux(k - 1, lst)
+    node_2 = gen_graph_aux(k - 1, lst)
+    node_3 = gen_graph_aux(k - 1, lst)
+
+    node = Node(lst.pop())
+
+    node.connect(node_1)
+    node.connect(node_2)
+    node.connect(node_3)
+
+    return node
+
+def gen_graph_aux(k, lst):
+    if k == 1:
+        return Node(lst.pop())
+
+    node_1 = gen_graph_aux(k - 1, lst)
+    node_2 = gen_graph_aux(k - 1, lst)
+
+    node = Node(lst.pop())
+
+    node.connect(node_1)
+    node.connect(node_2)
+
+    return node
+
+def gen_random_graph(k):
+    import random
+    lst = gen_lst(k)
+    random.shuffle(lst)
+    return gen_graph(k, lst)
 
 ################################################################################
 
@@ -232,52 +308,14 @@ def check_invariants(node, print_net=False):
                                 "(current node: node with value %d," + \
                                 " neighbor node: node with value %d)" % (node.value, edge.value))
 
+################################################################################
+
+def init_and_search():
+    pass
 
 ################################################################################
 
 if __name__ == "__main__":
-    node1 = Node(1)
-    node2 = Node(2)
-
-    node1.connect(node2)
-    check_invariants(node1)
-    check_invariants(node1)
-
-    print node1
-    print
-    print node2
-    print
-
-    node3 = Node(3)
-    node4 = Node(4)
-    node3.connect(node1)
-    node4.connect(node1)
-
-    print node1
-    print
-    print node2
-    print
-    print node3
-    print
-    print node4
-    print
-
-    node2_1 = Node(21)
-    node2_2 = Node(22)
-    node2.connect(node2_1)
-    node2.connect(node2_2)
-
-    print node1
-    print
-
-    print node2
-    print
-
-    check_invariants(node1)
-
-    print "==="
-    print init_graph(1)
-    print "==="
-    print init_graph(2)
-    print "==="
-    print init_graph(3)
+    lst = gen_random_graph(3)
+    print lst
+    print lst.show_bfs()
