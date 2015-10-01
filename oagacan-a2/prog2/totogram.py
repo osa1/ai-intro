@@ -10,7 +10,7 @@ import time
 # assignment. In the code I'll refer to NOTEs listed here in relevant parts.
 #
 # I did some research on graph colorings and I believe this problem is named
-# "Hamiltonian coloring", or at least "hamiltonian coloring" is the thing that
+# "Hamiltonian coloring", or at least "Hamiltonian coloring" is the thing that
 # looked most similar. In any case, all of the papers I found were
 # incomprehensible, so I had no luck finding relevant algorithms online.
 #
@@ -49,6 +49,19 @@ import time
 #
 #    With some tweaks(see iteration_size()), I got quite good utilization.
 #    (almost 100% in all CPUs)
+#
+# I could use different random testing, like for example every process could
+# create it's own initial random state etc. but I don't think it'd matter. In
+# the end I have a useless brute-force search.
+#
+# By default this script runs for 30 seconds and prints best result. See
+# results.txt for best results generated in my laptop.
+#
+# This program can also render graphs. For each result I have a text file
+# showing the rendered best graphs this program could find.
+#
+# Most methods of Node are unused, they were implemented to be used in
+# heuristics but I failed at finding a heuristic.
 #
 ################################################################################
 
@@ -418,10 +431,10 @@ def run_parallel(k, timeout):
     begin = time.time()
     dots = 0
     while (time.time() - begin) < timeout:
-        sys.stdout.write(
-                "\rProcessing" + \
-                        ''.join(list(itertools.repeat('.', dots))) + \
-                        ' '.join(list(itertools.repeat(' ', 10 - dots))))
+        # sys.stdout.write(
+        #         "\rProcessing" + \
+        #                 ''.join(list(itertools.repeat('.', dots))) + \
+        #                 ' '.join(list(itertools.repeat(' ', 10 - dots))))
         sys.stdout.flush()
         dots = (dots + 1) % 11
 
