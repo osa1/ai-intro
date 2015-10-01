@@ -10,7 +10,7 @@ import time
 # assignment. In the code I'll refer to NOTEs listed here in relevant parts.
 #
 # I did some research on graph colorings and I believe this problem is named
-# "Hamiltonian coloring", or at least "hamiltonian coloring" was the thing that
+# "Hamiltonian coloring", or at least "hamiltonian coloring" is the thing that
 # looked most similar. In any case, all of the papers I found were
 # incomprehensible, so I had no luck finding relevant algorithms online.
 #
@@ -19,13 +19,36 @@ import time
 # E.val = abs(A.val - B.val), and then we try to minimize maximum detour
 # distance in our graph.
 #
-# NOTE [How I test it]
-# ~~~~~~~~~~~~~~~~~~~~
+# [How I test it]
+# ~~~~~~~~~~~~~~~
 #
 # I'm not even sure if there's a P algorithm for testing for optimality of
-# results, and I'm not going to spend time on this. Instead here I try to
-# optimize search and test functions as much as possible. I run the search for
-# 10 seconds, and record the best solution.
+# results. Instead here I try to optimize search and test functions as much as
+# possible. I run the search for 10 seconds, and record the best solution.
+#
+# [Searching in parallel]
+# ~~~~~~~~~~~~~~~~~~~~~~~
+#
+# I'm clueless about how to solve this. I tried some local search stuff, like
+# trying to optimize a 3-node without thinking about neighbors etc. but it
+# didn't work. I couldn't think of any heuristics etc.
+#
+# So instead I tried to optimize whatever I have. I do two tricks.
+#
+# 1. I generate all permutations(on demand). This is a horrible brute-force
+#    solution, except I don't need to check for repeated states(of course some
+#    states are symmetric, and I don't check for that, and checking for
+#    symmetries would probably take more time than checking the cost and
+#    comparing it with current best solution).
+#
+# 2. I search in parallel. run_parallel() function spawns a process for each
+#    CPU, and then send tasks to processes. A task is basically a list of
+#    states. Processes then do the search and in the end they return their best
+#    results. Main process then combines all the results and decide which is
+#    the best of the best.
+#
+#    With some tweaks(see iteration_size()), I got quite good utilization.
+#    (almost 100% in all CPUs)
 #
 ################################################################################
 
@@ -212,13 +235,15 @@ def init_graph_aux(k, val):
 
     return (node, val + 1)
 
+def k_size(k):
+    return (3 * ((2 ** (k - 1)) - 1) + 1)
+
 def gen_lst(k):
     "Generate a list of ordered numbers for the tree with depth k."
     if k == 1:
         return [1]
 
-    nodes = 3 * ((2 ** (k - 1)) - 1) + 1
-    return range(1, nodes + 1)
+    return range(1, k_size(k) + 1)
 
 def gen_graph(k, lst):
     if k == 1:
@@ -354,11 +379,22 @@ def mainloop(pipe):
 PROCESS_STATE = 1
 RETURN = 2
 
+def iteration_size(k):
+    if k <= 4:
+        return 10000
+    elif k == 5:
+        return 1000
+    elif k == 6:
+        return 500
+    else:
+        return 100
+
 def run_parallel(k, timeout):
     cpus = multiprocessing.cpu_count()
     print "CPUs:", cpus
     print "k:", k
-
+    iter_size = iteration_size(k)
+    print "Size of lists we send to processes:", k_size(k) * iter_size
 
     print "Creating %d processes for parallel processing." % cpus
 
@@ -382,9 +418,12 @@ def run_parallel(k, timeout):
     begin = time.time()
     dots = 0
     while (time.time() - begin) < timeout:
-        sys.stdout.write("\rProcessing" + ''.join(list(itertools.repeat('.', dots))))
+        sys.stdout.write(
+                "\rProcessing" + \
+                        ''.join(list(itertools.repeat('.', dots))) + \
+                        ' '.join(list(itertools.repeat(' ', 10 - dots))))
         sys.stdout.flush()
-        dots += 1
+        dots = (dots + 1) % 11
 
         for (p, pipe) in processes:
             # print "Sending task to process %s." % str(p.pid)
@@ -450,7 +489,7 @@ def run_sequential(k, timeout):
 ################################################################################
 
 if __name__ == "__main__":
-    timeout = 3
+    timeout = 30
 
     k = int(sys.argv[1])
     (min_ret, iterations) = run_parallel(k, timeout)
@@ -459,3 +498,7 @@ if __name__ == "__main__":
     print min_ret
     print "score:", min_ret.score()
     print "iterations:", iterations
+
+    print "==="
+    print min_ret.score()
+    print min_ret.show_bfs()
