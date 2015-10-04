@@ -1,0 +1,47 @@
+I do a search while keeping these in mind:
+
+- There has been 4 moves, and two black pieces are missing. This means that two
+  of the 4 white moves were capturing moves.
+
+- Since last move was done by black, that last move has to be D6.
+
+- Last move has to be a capturing move, and it has to capture white's knight.
+  The reason is this:
+
+  - White moved only it's knight at B1.
+    (he could also move it's other knight, but there is simply not enough moves
+    for moving both knights and capturing two black pieces etc.)
+
+  - So in his 4th move, white has to move his knight.
+
+  - If black didn't capture white's knight which was moved in white's 4th
+    turn, then we would see white's knight on the board. It's not there, which
+    means black has captured it in his last move.
+
+- Whichever piece captured white's knight has to be on board in this last state.
+
+- White's knight captured black's knight.
+
+- White's knight captured one of black's pawns.
+
+- So 2 out of 4 white moves involved capturing some pieces.
+
+- There's no way to capture anything in first move. So white has 3 moves in
+  which 2 of them involved capturing black's pieces.
+
+- Only way for white to capture something in his second move is this:
+
+  B1 C3 - D7 D5 - C3 D5
+
+  - But this state is impossible to solve. The reason is because now white
+    knight has to somehow move do D6 and this takes at least 3 moves, but he
+    only has 2 more moves. Also, there's no way to capture black's knights
+    while doing these moves.
+
+- So we consider last possibility: White has to capture two pieces in it's last
+  two moves.
+
+...
+
+At this point we just consider all the possibilities. I've even written a
+program for this(see search.py). This is unsolvable.
