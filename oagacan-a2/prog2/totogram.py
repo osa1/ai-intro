@@ -6,9 +6,6 @@ import time
 
 ################################################################################
 #
-# Here I'm collecting all the NOTEs as per the request from previous
-# assignment. In the code I'll refer to NOTEs listed here in relevant parts.
-#
 # I did some research on graph colorings and I believe this problem is named
 # "Hamiltonian coloring", or at least "Hamiltonian coloring" is the thing that
 # looked most similar. In any case, all of the papers I found were
@@ -26,6 +23,8 @@ import time
 # results. Instead here I try to optimize search and test functions as much as
 # possible. I run the search for 10 seconds, and record the best solution.
 #
+# (timeout can be changed in commend line, see --help)
+#
 # [Searching in parallel]
 # ~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -42,13 +41,13 @@ import time
 #    comparing it with current best solution).
 #
 # 2. I search in parallel. run_parallel() function spawns a process for each
-#    CPU, and then send tasks to processes. A task is basically a list of
+#    CPU core, and then send tasks to processes. A task is basically a list of
 #    states. Processes then do the search and in the end they return their best
 #    results. Main process then combines all the results and decide which is
 #    the best of the best.
 #
 #    With some tweaks(see iteration_size()), I got quite good utilization.
-#    (almost 100% in all CPUs)
+#    (almost 90% in all CPUs)
 #
 # I could use different random testing, like for example every process could
 # create it's own initial random state etc. but I don't think it'd matter. In
@@ -427,7 +426,7 @@ def run_parallel(k, timeout):
     random.shuffle(lst)
     perms = itertools.permutations(lst)
 
-    print "Will keep sending tasks for about %d seconds." % timeout
+    print "Will run for about %d seconds." % timeout
     begin = time.time()
     dots = 0
     while (time.time() - begin) < timeout:
@@ -502,11 +501,21 @@ def run_sequential(k, timeout):
 ################################################################################
 
 if __name__ == "__main__":
-    timeout = 30
+    import argparse
 
-    k = int(sys.argv[1])
-    (min_ret, iterations) = run_parallel(k, timeout)
-    # (min_ret, iterations) = run_sequential(k, timeout)
+    arg_parser = argparse.ArgumentParser("Totogram")
+    arg_parser.add_argument("k", type=int)
+    arg_parser.add_argument("--timeout", type=int, default=30)
+    args = vars(arg_parser.parse_args())
+    print args
+
+    timeout = args["timeout"]
+    k = args["k"]
+
+    if k <= 2:
+        (min_ret, iterations) = run_sequential(k, timeout)
+    else:
+        (min_ret, iterations) = run_parallel(k, timeout)
 
     print min_ret
     print "score:", min_ret.score()
