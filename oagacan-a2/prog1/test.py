@@ -95,13 +95,12 @@ class TestSolver(unittest.TestCase):
 
     def test_minimax_depth_simple_first(self):
         grid = Grid.empty(4)
-        player = Minimax(h_terminal_available, max_depth=3)
-        self.assertFalse(run_game(
-            grid, simple_player, player, verbose=False))
+        player = Minimax(h_terminal_available, simple_player, max_depth=3)
+        self.assertFalse(run_game(grid, simple_player, player, verbose=False))
 
     def test_minimax_depth_main_first(self):
         grid = Grid.empty(4)
-        player = Minimax(h_terminal_available, max_depth=1)
+        player = Minimax(h_terminal_available, simple_player, max_depth=1)
         self.assertFalse(run_game(
             grid, player, simple_player, verbose=False))
 

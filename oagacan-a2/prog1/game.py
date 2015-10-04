@@ -8,7 +8,7 @@ import rameses
 BLACK = 0, 0, 0
 WHITE = 255, 255, 255
 
-PGM_OUTPUT_RE = re.compile(r"\((\d),\s*(\d)\)")
+PGM_OUTPUT_RE = re.compile(r"\((\d),\s*(\d)\)\n[\.x]*")
 
 def mouse_grid_xy(cell_size):
     (mouse_x, mouse_y) = pygame.mouse.get_pos()
@@ -22,7 +22,7 @@ def parse_program_ouput(s):
     ret = PGM_OUTPUT_RE.match(s)
     return (int(ret.group(1)), int(ret.group(2)))
 
-def run_game(state, turn):
+def run_game(state, turn, timeout):
     import math
     import subprocess
 
@@ -56,15 +56,13 @@ def run_game(state, turn):
     while True:
 
         if not turn:
-            t = 100 # just big enough for now
-
             # In theory, we don't need to create a subprocess here, we can just
             # use the library we've already imported, but I need to measure the
             # whole thing, e.g. process initialization, parsing command line
             # args etc. since this is what's measured in the tournament.
             begin = time.clock()
             output = subprocess.check_output(
-                    ["pypy", "rameses.py", str(state.size), "".join(state.grid), str(t)])
+                    ["pypy", "rameses.py", str(state.size), "".join(state.grid), str(timeout)])
             print "output", output
             (computer_x, computer_y) = parse_program_ouput(output)
             end = time.clock()
@@ -137,17 +135,17 @@ if __name__ == "__main__":
     import argparse
 
     arg_parser = argparse.ArgumentParser("game.py")
-    arg_parser.add_argument("board-size", type=int, nargs=1)
+    arg_parser.add_argument("board-size", type=int)
     arg_parser.add_argument("-fc", "--first-computer", action="store_true", default=False)
+    arg_parser.add_argument("timeout", type=float, default=None)
 
     args = vars(arg_parser.parse_args())
 
-    state = rameses.Grid.empty(args["board-size"][0])
+    state = rameses.Grid.empty(args["board-size"])
     # WOW!! This is ridiculous. Above I add the argument as "first-computer"
     # (note the hyphen, it's not underscore) but to read from the dictionary I
     # have to use underscore. This sucks! You're fired, Python!
     turn = not args["first_computer"]
 
     # print state, turn
-
-    run_game(state, turn)
+    run_game(state, turn, timeout=args["timeout"])

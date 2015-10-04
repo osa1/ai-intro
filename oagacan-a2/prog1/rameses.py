@@ -1,8 +1,40 @@
-# from heapq import heappop, heappush
 import itertools
+import math
 import sys
 import time
 
+################################################################################
+# NOTE [Minimax implementation]
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# I implemented "negamax" variant, which I found on Wikipedia. Essentially it's
+# just a special case of minimax when both players have exactly the same
+# criteria. In our case, we don't have different pieces so a move for player A
+# is equally good for player B(if it were B's turn).
+#
+# I didn't implement alpha-beta pruning, simply because I didn't have enough
+# time.
+#
+# NOTE [Heuristic]
+# ~~~~~~~~~~~~~~~~
+#
+# I'm using "spanned space" heuristic, which is basically total number of tiles
+# that are either not safe to move(make us lose) or already occupied.
+#
+# The heuristic is used in two places.
+#
+# 1. In depth-bounded search(implemented for experimentation, not used by default).
+# 2. In time-bounded search, when a path consumes all the time available to it.
+#
+# NOTE [We don't use time limit in the most efficient way]
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# Main thing we do imperfectly is this:
+# Let's say we're going to branch to 5 branches and we have 5 seconds left to
+# think. We give each branch 1 second. But what happens if one of the branches
+# takes only 0.1 second to solve? In this case we don't do anything, we simply
+# answer faster than necessary.
+#
 ################################################################################
 
 class Grid:
@@ -22,6 +54,13 @@ class Grid:
         for i in xrange(len(self.grid)):
             if self.grid[i] == 'x':
                 self.__hash |= 1 << i
+
+    def answer(self):
+        cs = []
+        for y in xrange(self.size):
+            for x in xrange(self.size):
+                cs.append(self.at_xy(x, y))
+        return ''.join(cs)
 
     @classmethod
     def empty(cls, size):
@@ -185,7 +224,7 @@ def indent_lines(n, s):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 # Instead of maintaining a stack I'm using recursive implementation here. The
-# reason is becaue it doesn't matter, because IMO you never need to consider
+# reason is because it doesn't matter, because IMO you never need to consider
 # 200 moves ahead etc. because:
 #
 # 1. It takes forever.
@@ -195,15 +234,19 @@ def indent_lines(n, s):
 
 # Creating this class to avoid horrible wrapper functions.
 class Minimax:
-    def __init__(self, heuristic, max_depth=sys.maxint):
+    def __init__(self, heuristic, quick, max_depth=sys.maxint):
         self.heuristic = heuristic
         self.max_depth = max_depth
+        self.quick     = quick
 
-    def __call__(self, state, depth=None, steps=0):
+    def __call__(self, state, timeout=None, depth=None, steps=0):
         if depth == None:
             depth = self.max_depth
 
         max_move = None
+
+        if timeout is not None:
+            begin = time.time()
 
         # print (indent_lines(steps,
         #     "minimax considering state:\n" + str(state)))
@@ -221,15 +264,28 @@ class Minimax:
         # we're not at a terminal state. (which to me makes perfect sense, but
         # some of the resources like Wikipedia doesn't use it this way)
 
-        for move in state.good_moves():
+        good_moves = list(state.good_moves())
+        if timeout is None:
+            timeout_split = None
+        elif len(good_moves) != 0:
+            timeout_split = math.floor(timeout / float(len(good_moves)))
+
+        for move in good_moves:
             # print (indent_lines(steps, "considering move: " + str(move)))
             # print (indent_lines(steps, "current max move: " + str(max_move)))
             state.move_inplace(*move)
 
+            if timeout is not None:
+                if time.time() - begin >= timeout - 0.001:
+                    ret = self.quick(state)
+                    state.revert(*move)
+                    return ret
+
             if depth == 0:
                 new_state_eval = self.heuristic(state)
             else:
-                (new_state_eval, _) = self.__call__(state, depth=depth-1, steps=steps+1)
+                (new_state_eval, _) = self.__call__(
+                        state, timeout=timeout_split, depth=depth-1, steps=steps+1)
                 new_state_eval = - new_state_eval
 
             state.revert(*move)
@@ -317,12 +373,12 @@ def h_terminal_available(state):
 ################################################################################
 # Minimax players
 
-available_space_player = Minimax(h_available_space)
-terminal_state_player = Minimax(h_terminal)
-terminal_state_player_2 = Minimax(h_terminal_available)
+available_space_player = Minimax(h_available_space, simple_player)
+terminal_state_player = Minimax(h_terminal, simple_player)
+terminal_state_player_2 = Minimax(h_terminal_available, simple_player)
 # main_player = terminal_state_player
 main_player = terminal_state_player_2
-main_player.max_depth = 3
+# main_player.max_depth = 3
 
 ################################################################################
 
@@ -356,14 +412,17 @@ if __name__ == "__main__":
     import argparse
 
     arg_parser = argparse.ArgumentParser("Rameses player")
-    arg_parser.add_argument("board-size", type=int, nargs=1)
-    arg_parser.add_argument("board", type=str, nargs=1)
-    arg_parser.add_argument("time-limit", type=float, nargs=1)
+    arg_parser.add_argument("board-size", type=int)
+    arg_parser.add_argument("board", type=str)
+    arg_parser.add_argument("time-limit", type=float, default=None)
 
     args = vars(arg_parser.parse_args())
-    grid = Grid(args["board-size"][0], args["board"][0])
-    (_, move) = main_player(grid)
+    grid = Grid(args["board-size"], args["board"])
+    # print grid.answer()
+    (_, move) = main_player(grid, timeout=args["time-limit"])
     print move
+    grid.move_inplace(*move)
+    print grid.answer()
 
     # grid = Grid.empty(3)
     # run_game(grid, simple_player, available_space_player)
