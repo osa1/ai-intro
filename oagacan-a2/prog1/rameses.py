@@ -199,12 +199,9 @@ class Minimax:
         self.heuristic = heuristic
         self.max_depth = max_depth
 
-    def __call__(self, state, depth=None, steps=0, timeit=False):
+    def __call__(self, state, depth=None, steps=0):
         if depth == None:
             depth = self.max_depth
-
-        if timeit:
-            begin = time.clock()
 
         max_move = None
 
@@ -232,8 +229,7 @@ class Minimax:
             if depth == 0:
                 new_state_eval = self.heuristic(state)
             else:
-                (new_state_eval, _) = self.__call__(
-                        state, depth=depth-1, steps=steps+1, timeit=timeit)
+                (new_state_eval, _) = self.__call__(state, depth=depth-1, steps=steps+1)
                 new_state_eval = - new_state_eval
 
             state.revert(*move)
@@ -250,13 +246,9 @@ class Minimax:
 
         # print (indent_lines(steps, "max move: " + str(max_move)))
 
-        if timeit:
-            end = time.clock()
-            print "Decided in %fs." % (end - begin)
-
         return max_move
 
-def simple_player(state, timeit=False):
+def simple_player(state):
     max_move = None
 
     for move in state.good_moves():
@@ -274,7 +266,7 @@ def simple_player(state, timeit=False):
 
     return max_move
 
-def quick_player(state, timeit=False):
+def quick_player(state):
     # Quick player tries to play quick and smart. He thinks that for boards
     # with size > 4, first moves can be just almost random. He just makes sure
     # that he won't do super stupid things(like moving to the only place that
@@ -290,7 +282,7 @@ def quick_player(state, timeit=False):
 
     return best_move
 
-def random_player(state, timeit=False):
+def random_player(state):
     import random
     # We only use state arguments, others are added to comply with the
     # interface.
@@ -370,7 +362,7 @@ if __name__ == "__main__":
 
     args = vars(arg_parser.parse_args())
     grid = Grid(args["board-size"][0], args["board"][0])
-    (_, move) = main_player(grid, timeit=False)
+    (_, move) = main_player(grid)
     print move
 
     # grid = Grid.empty(3)
