@@ -1,4 +1,4 @@
-# Automatic Zacate game player
+# Automatic Zacate game player v0.1
 # B551 Fall 2015
 # Based on skeleton code by D. Crandall
 #

@@ -1,4 +1,4 @@
-# Dice and game state code for Zaate
+# Dice and game state code for Zacate v0.1
 # B551  Fall 2015
 # D. Crandall
 # 
