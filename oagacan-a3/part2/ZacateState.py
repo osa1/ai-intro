@@ -1,4 +1,4 @@
-# Dice and game state code for Zacate v0.1
+# Dice and game state code for Zacate v0.2 (updated Oct 10 to fix bug with pupusa de queso scoring)
 # B551  Fall 2015
 # D. Crandall
 # 
@@ -45,7 +45,7 @@ class Scorecard:
         if category in Scorecard.Numbers:
             score = counts[Scorecard.Numbers[category]-1] * Scorecard.Numbers[category]
         elif category == "pupusa de queso":
-            score = 40 if sorted(self.scorecard) == [1,2,3,4,5] else 0
+            score = 40 if sorted(dice) == [1,2,3,4,5] or sorted(dice) == [2,3,4,5,6] else 0
         elif category == "pupusa de frijol":
             score = 30 if (len(set([1,2,3,4]) - set(dice)) == 0 or len(set([2,3,4,5]) - set(dice)) == 0 or len(set([3,4,5,6]) - set(dice)) == 0) else 0
         elif category == "elote":
