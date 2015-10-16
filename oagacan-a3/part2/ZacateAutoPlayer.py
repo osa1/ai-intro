@@ -9,29 +9,7 @@
 from ZacateState import Dice
 from ZacateState import Scorecard
 import random
-
 import sys
-
-ALL_CARDS = set(Scorecard.Categories)
-
-class ZacateAutoPlayer:
-
-    def __init__(self):
-        pass
-
-    def first_roll(self, dice, scorecard):
-        return [0] # always re-roll first die (blindly)
-
-    def second_roll(self, dice, scorecard):
-        return [1, 2] # always re-roll second and third dice (blindly)
-
-    def third_roll(self, dice, scorecard):
-        # stupidly just randomly choose a category to put this in
-        return random.choice(list(self.__available_cards(scorecard)))
-
-    def __available_cards(self, scorecard):
-        return ALL_CARDS - set(scorecard.scorecard.keys())
-
 
 ################################################################################
 # Calculating points we can add to our score from current set of dice
@@ -373,6 +351,57 @@ def tamal_rethrows(dice):
     # increase points with some trivial re-throws. For example, we can always
     # re-throw ones. I'm leaving this case for now. TODO
     return []
+
+################################################################################
+# Player
+################################################################################
+
+ALL_CARDS = set(Scorecard.Categories)
+
+# A map from category names to point and re-throw functions
+CATFNS = {
+        "unos": (unos_points, unos_rethrows),
+        "doses": (doses_points, doses_rethrows),
+        "treses": (treses_points, treses_rethrows),
+        "cuatros": (cuatros_points, cuatros_rethrows),
+        "cincos": (cincos_points, cincos_rethrows),
+        "seises": (seises_points, seises_rethrows),
+        "pupusa de queso": (pupusa_de_queso_points, pupusa_de_queso_rethrows),
+        "pupusa_de_frijol": (pupusa_de_frijol_points, pupusa_de_frijol_rethrows),
+        "elote": (elote_points, elote_rethrows),
+        "triple": (triple_points, triple_rethrows),
+        "cuadruple": (cuadruple_points, cuadruple_rethrows),
+        "quintupulo": (quintupulo_points, quintupulo_rethrows),
+        "tamal": (tamal_points, tamal_rethrows)
+        }
+
+class ZacateAutoPlayer:
+
+    # An attempt:
+    # We generate best points we can get right now, and points we can get with
+    # a re-throw, with possibilities.
+    #
+    # Some potential moves will risk current points. In that case we need to
+    # consider possibilities and somehow decide whether to re-throw.
+    #
+    # It may be the case that re-throwing a set of dice will possibly make
+    # multiple cards available. We should somehow check for that.
+
+    def __init__(self):
+        pass
+
+    def first_roll(self, dice, scorecard):
+        return [0] # always re-roll first die (blindly)
+
+    def second_roll(self, dice, scorecard):
+        return [1, 2] # always re-roll second and third dice (blindly)
+
+    def third_roll(self, dice, scorecard):
+        # stupidly just randomly choose a category to put this in
+        return random.choice(list(self.__available_cards(scorecard)))
+
+    def __available_cards(self, scorecard):
+        return ALL_CARDS - set(scorecard.scorecard.keys())
 
 ################################################################################
 
