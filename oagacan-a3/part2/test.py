@@ -115,8 +115,12 @@ class TestPoints(unittest.TestCase):
         self.assertEqual([[0, 5], [1], [2], [], [3, 4], []], group_dice([1, 2, 3, 5, 5, 1]))
 
     def test_min_by(self):
-        self.assertEqual([], min_by(len, [[1], [2, 3], [4, 5, 6], []]))
-        self.assertEqual([1], min_by(len, [[1], [2, 3], [4, 5, 6]]))
+        self.assertEqual(3, min_by(len, [[1], [2, 3], [4, 5, 6], []]))
+        self.assertEqual(0, min_by(len, [[1], [2, 3], [4, 5, 6]]))
+
+    def test_min_by(self):
+        self.assertEqual(2, max_by(len, [[1], [2, 3], [4, 5, 6], []]))
+        self.assertEqual(0, max_by(len, [[1, 2, 3, 4], [2, 3], [4, 5, 6]]))
 
     def test_unos_rethrow(self):
         dice = Dice()
@@ -163,6 +167,33 @@ class TestPoints(unittest.TestCase):
         dice.dice = [1, 1, 2, 3, 4]
         # TODO: Again, we have multiple choices with same probabilities here
         self.assertEqual([3, 4], elote_rethrows(dice))
+
+    def test_triple_rethrows(self):
+        dice = Dice()
+
+        dice.dice = [1, 2, 1, 2, 1]
+        self.assertEqual([], triple_rethrows(dice))
+
+        dice.dice = [1, 2, 1, 2, 3]
+        self.assertEqual([1, 3, 4], triple_rethrows(dice))
+
+    def test_cuadruple_rethrows(self):
+        dice = Dice()
+
+        dice.dice = [1, 2, 1, 2, 1]
+        self.assertEqual([1, 3], cuadruple_rethrows(dice))
+
+        dice.dice = [1, 2, 1, 1, 1]
+        self.assertEqual([], cuadruple_rethrows(dice))
+
+    def test_quintupulo_rethrows(self):
+        dice = Dice()
+
+        dice.dice = [1, 2, 1, 2, 1]
+        self.assertEqual([1, 3], quintupulo_rethrows(dice))
+
+        dice.dice = [1, 2, 1, 1, 1]
+        self.assertEqual([1], quintupulo_rethrows(dice))
 
 ################################################################################
 

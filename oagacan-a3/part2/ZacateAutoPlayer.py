@@ -121,7 +121,7 @@ def tamal_points(dice):
 # points.
 
 ###############################################################################
-# Frist, some utils
+# First, some utils
 
 def filter_idx(p, lst):
     """A helper function that works like filter, except returns indexes of
@@ -155,16 +155,29 @@ def group_dice(lst):
     return ret
 
 def min_by(f, lsts):
-    min = None
     min_score = sys.maxint
 
-    for lst in lsts:
+    for idx, lst in enumerate(lsts):
         score = f(lst)
         if score < min_score:
             min_score = score
-            min = lst
+            min_idx = idx
 
-    return min
+    return min_idx
+
+def max_by(f, lsts):
+    # This is yet another weird Python "convenience", it doesn't provide
+    # sys.minint, and -sys.maxint is in range. minint is actually
+    # (-sys.maxint - 1).
+    max_score = - sys.maxint
+
+    for idx, lst in enumerate(lsts):
+        score = f(lst)
+        if score > max_score:
+            max_score = score
+            max_idx = idx
+
+    return max_idx
 
 ###############################################################################
 
@@ -266,23 +279,22 @@ def pupusa_de_frijol_rethrows(dice):
         else:
             case3_rethrows.extend(group)
 
-    return min_by(len, [case1_rethrows, case2_rethrows, case3_rethrows])
+    rethrows = [case1_rethrows, case2_rethrows, case3_rethrows]
+    return rethrows[min_by(len, rethrows)]
 
 def elote_rethrows(dice):
     # 3 same + 2 same
 
+    if elote_points(dice) != 0:
+        return []
+
     groups = group_dice(dice.dice)
 
-    biggest_group_idx = None
-    biggest_group_len = None
+    # Two pass, because len(groups) == 5.
+    biggest_group_idx = max_by(len, groups)
+
     second_biggest_group_idx = None
     second_biggest_group_len = None
-
-    # Two pass, because len(groups) == 5.
-    for group_idx, group in enumerate(groups):
-        if biggest_group_idx == None or len(group) > biggest_group_len:
-            biggest_group_idx = group_idx
-            biggest_group_len = len(group)
 
     for group_idx, group in enumerate(groups):
         if group_idx == biggest_group_idx:
@@ -302,6 +314,65 @@ def elote_rethrows(dice):
 
     return rethrows
 
+def triple_rethrows(dice):
+    # 3 same
+
+    # TODO: This algorithm is probably borked. Let's say we have this:
+    # [1, 1, 2, 2, 3]
+    # Should we re-throw all 2s? We should calculate and see what's the best
+    # move here.
+
+    if triple_points(dice) != 0:
+        return []
+
+    groups = group_dice(dice.dice)
+    biggest_group_idx = max_by(len, groups)
+    rethrows = []
+
+    for group_idx, group in enumerate(groups):
+        if group_idx != biggest_group_idx:
+            rethrows.extend(group)
+
+    return rethrows
+
+def cuadruple_rethrows(dice):
+    # 4 same
+    # This is like triple_rethrows, except we don't need to consider cases like
+    # [1, 1, 2, 2, 3]
+
+    if cuadruple_points(dice) != 0:
+        return []
+
+    groups = group_dice(dice.dice)
+    biggest_group_idx = max_by(len, groups)
+    rethrows = []
+
+    for group_idx, group in enumerate(groups):
+        if group_idx != biggest_group_idx:
+            rethrows.extend(group)
+
+    return rethrows
+
+def quintupulo_rethrows(dice):
+    # Only way to get points is to collect all of them into one group
+    groups = group_dice(dice.dice)
+    biggest_group_idx = max_by(len, groups)
+    rethrows = []
+
+    # The algorithm is same as cuadruple, but probabilities are difference.
+    # Currently we're not calculating probabilities so essentially they're same
+    # until probabilities are fixed. FIXME
+    for group_idx, group in enumerate(groups):
+        if group_idx != biggest_group_idx:
+            rethrows.extend(group)
+
+    return rethrows
+
+def tamal_rethrows(dice):
+    # This case is interesting. We get points no matter what, but we can
+    # increase points with some trivial re-throws. For example, we can always
+    # re-throw ones. I'm leaving this case for now. TODO
+    return []
 
 ################################################################################
 
