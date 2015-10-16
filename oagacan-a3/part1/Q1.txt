@@ -1,0 +1,19 @@
+# Question 1
+
+We're looking for these two formations:
+
+    G B G B G B G B -- first case
+    B G B G B G B G -- second case
+
+In total they can land in
+
+        8!
+    --------- = 70 different formations.
+     4! * 4!    (repeated permutation)
+
+In 70 different formations, we're looking for 2 specific formations, shown above
+as "first case" and "second case". So the probability is:
+
+     2
+    ---- = 0.0285
+     70
