@@ -92,6 +92,48 @@ class TestPoints(unittest.TestCase):
         dice.dice = [2, 1, 1, 1, 1]
         self.assertEqual(0, quintupulo_points(dice))
 
+    def test_tamal_points(self):
+        dice = Dice()
+        dice.dice = [1, 2, 3, 4, 5]
+        self.assertEqual(sum(dice.dice), tamal_points(dice))
+
+    ############################################################################
+    # Testing re-throws
+    ############################################################################
+
+    def test_filter_idx(self):
+        self.assertEqual([1, 3, 5], filter_idx(lambda w: w == 1, [2, 1, 2, 1, 2, 1]))
+        self.assertEqual([],        filter_idx(lambda w: w == 10, []))
+        self.assertEqual([],        filter_idx(lambda w: w == 10, [20]))
+
+    def test_find_idxs(self):
+        self.assertEqual([1, 3, 5], find_idx(1,  [2, 1, 2, 1, 2, 1]))
+        self.assertEqual([],        find_idx(10, []))
+        self.assertEqual([],        find_idx(10, [20]))
+
+    def test_group_dice(self):
+        self.assertEqual([[0, 5], [1], [2], [], [3, 4], []], group_dice([1, 2, 3, 5, 5, 1]))
+
+    def test_unos_rethrow(self):
+        dice = Dice()
+        dice.dice = [1, 2, 1, 2, 1]
+
+        self.assertEqual([1, 3], unos_rethrows(dice))
+
+    def test_pupusa_de_queso_rethrows(self):
+        dice = Dice()
+
+        dice.dice = [2, 4, 1, 3, 5]
+        self.assertEqual([], pupusa_de_queso_rethrows(dice))
+
+        # TODO: We actually have multiple choices with same probabilities,
+        # maybe make tests more flexible for this
+
+        dice.dice = [2, 4, 1, 3, 1]
+        self.assertEqual([4], pupusa_de_queso_rethrows(dice))
+
+        dice.dice = [1, 1, 1, 1, 1]
+        self.assertEqual([1, 2, 3, 4], pupusa_de_queso_rethrows(dice))
 
 ################################################################################
 
