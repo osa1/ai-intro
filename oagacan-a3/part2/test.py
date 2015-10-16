@@ -114,6 +114,10 @@ class TestPoints(unittest.TestCase):
     def test_group_dice(self):
         self.assertEqual([[0, 5], [1], [2], [], [3, 4], []], group_dice([1, 2, 3, 5, 5, 1]))
 
+    def test_min_by(self):
+        self.assertEqual([], min_by(len, [[1], [2, 3], [4, 5, 6], []]))
+        self.assertEqual([1], min_by(len, [[1], [2, 3], [4, 5, 6]]))
+
     def test_unos_rethrow(self):
         dice = Dice()
         dice.dice = [1, 2, 1, 2, 1]
@@ -134,6 +138,31 @@ class TestPoints(unittest.TestCase):
 
         dice.dice = [1, 1, 1, 1, 1]
         self.assertEqual([1, 2, 3, 4], pupusa_de_queso_rethrows(dice))
+
+    def test_pupusa_de_frijol_rethrows(self):
+        dice = Dice()
+
+        dice.dice = [1, 2, 4, 4, 5]
+
+        # TODO: We have two possible moves with same probabilities here:
+        #    we can target [1, 2, 3, 4] and rethrow 3 and 4,
+        # or we can target [2, 3, 4, 5] and rethrow 0 and 3.
+        # Maybe we should extend tests to take those into account when
+        # comparing results.
+        # self.assertEqual([3, 4], pupusa_de_frijol_rethrows(dice))
+        self.assertEqual([0, 3], pupusa_de_frijol_rethrows(dice))
+
+        # TODO: Add more tests, this looks a bit tricky.
+
+    def test_elote_rethrows(self):
+        dice = Dice()
+
+        dice.dice = [1, 1, 2, 2, 3]
+        self.assertEqual([4], elote_rethrows(dice))
+
+        dice.dice = [1, 1, 2, 3, 4]
+        # TODO: Again, we have multiple choices with same probabilities here
+        self.assertEqual([3, 4], elote_rethrows(dice))
 
 ################################################################################
 

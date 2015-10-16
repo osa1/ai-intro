@@ -10,6 +10,8 @@ from ZacateState import Dice
 from ZacateState import Scorecard
 import random
 
+import sys
+
 ALL_CARDS = set(Scorecard.Categories)
 
 class ZacateAutoPlayer:
@@ -118,6 +120,9 @@ def tamal_points(dice):
 # For unos through seises, we just re-throw every dice that doesn't give us any
 # points.
 
+###############################################################################
+# Frist, some utils
+
 def filter_idx(p, lst):
     """A helper function that works like filter, except returns indexes of
     elements that passed the test instead of returning a new list.
@@ -148,6 +153,27 @@ def group_dice(lst):
     for idx in range(len(lst)):
         ret[lst[idx] - 1].append(idx)
     return ret
+
+def min_by(f, lsts):
+    min = None
+    min_score = sys.maxint
+
+    for lst in lsts:
+        score = f(lst)
+        if score < min_score:
+            min_score = score
+            min = lst
+
+    return min
+
+###############################################################################
+
+# TODO: These functions should return the probability that after rethrows, we
+# get the points. Otherwise they're pretty much useless. Notice that rethrowing
+# less number of dice doesn't mean having higher change of getting points.
+# (TODO: or does it?) Also, we may choose a move that gives us more points with
+# less probability instead of a move that gives us less points with more
+# probability etc.
 
 def unos_rethrows(dice):
     return filter_idx(lambda d: d != 1, dice.dice)
@@ -206,11 +232,75 @@ def pupusa_de_queso_rethrows(dice):
     raise RuntimeError("Checks are not exhaustive.")
 
 def pupusa_de_frijol_rethrows(dice):
+    if pupusa_de_frijol_points(dice) != 0:
+        return []
+
     # One of these conditions should hold:
-    #   - 5 and 6 are missing
-    #   - 1 and 6 are missing
-    #   - 1 and 2 are missing
-    pass
+    #   - We have 1, 2, 3, 4
+    #   - We have 2, 3, 4, 5
+    #   - We have 3, 4, 5, 6
+
+    groups = group_dice(dice.dice)
+
+    # Consider case 1
+    case1_rethrows = []
+    for group_idx, group in enumerate(groups):
+        if group_idx in [1, 2, 3, 4]:
+            case1_rethrows.extend(group[1:])
+        else:
+            case1_rethrows.extend(group)
+
+    # Consider case 2
+    case2_rethrows = []
+    for group_idx, group in enumerate(groups):
+        if group_idx in [2, 3, 4, 5]:
+            case2_rethrows.extend(group[1:])
+        else:
+            case2_rethrows.extend(group)
+
+    # Consider case 3
+    case3_rethrows = []
+    for group_idx, group in enumerate(groups):
+        if group_idx in [3, 4, 5, 6]:
+            case3_rethrows.extend(group[1:])
+        else:
+            case3_rethrows.extend(group)
+
+    return min_by(len, [case1_rethrows, case2_rethrows, case3_rethrows])
+
+def elote_rethrows(dice):
+    # 3 same + 2 same
+
+    groups = group_dice(dice.dice)
+
+    biggest_group_idx = None
+    biggest_group_len = None
+    second_biggest_group_idx = None
+    second_biggest_group_len = None
+
+    # Two pass, because len(groups) == 5.
+    for group_idx, group in enumerate(groups):
+        if biggest_group_idx == None or len(group) > biggest_group_len:
+            biggest_group_idx = group_idx
+            biggest_group_len = len(group)
+
+    for group_idx, group in enumerate(groups):
+        if group_idx == biggest_group_idx:
+            continue
+
+        if second_biggest_group_idx == None or len(group) > second_biggest_group_len:
+            second_biggest_group_idx = group_idx
+            second_biggest_group_len = len(group)
+
+    # Now that we choose which groups to collect dice into, re-throw everything
+    # else.
+    rethrows = []
+
+    for group_idx, group in enumerate(groups):
+        if group_idx != biggest_group_idx and group_idx != second_biggest_group_idx:
+            rethrows.extend(group)
+
+    return rethrows
 
 
 ################################################################################
