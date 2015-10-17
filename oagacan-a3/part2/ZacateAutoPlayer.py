@@ -193,6 +193,9 @@ def n_rethrows(dice, n):
     set. Points are calculated according to first six cards("unos", "doses",
     "treses" etc. for example we multiply number of 2s with 2 for "doses",
     number of 3s with 3 for "treses" etc.).
+
+    Note that in this type of cards, it always makes sense to re-throw some
+    dice, except when all of the dice in the set is == n.
     """
     # index of dices that are not n
     non_Ns_idx = filter_idx(lambda w: w != n, dice.dice)
@@ -219,22 +222,22 @@ def n_rethrows(dice, n):
     return (non_Ns_idx, avg_points)
 
 def unos_rethrows(dice):
-    return filter_idx(lambda d: d != 1, dice.dice)
+    return n_rethrows(dice, 1)
 
 def doses_rethrows(dice):
-    return filter_idx(lambda d: d != 2, dice.dice)
+    return n_rethrows(dice, 2)
 
 def treses_rethrows(dice):
-    return filter_idx(lambda d: d != 3, dice.dice)
+    return n_rethrows(dice, 3)
 
 def cuatros_rethrows(dice):
-    return filter_idx(lambda d: d != 4, dice.dice)
+    return n_rethrows(dice, 4)
 
 def cincos_rethrows(dice):
-    return filter_idx(lambda d: d != 5, dice.dice)
+    return n_rethrows(dice, 5)
 
 def seises_rethrows(dice):
-    return filter_idx(lambda d: d != 6, dice.dice)
+    return n_rethrows(dice, 6)
 
 def pupusa_de_queso_rethrows(dice):
     s = set(dice.dice)

@@ -153,7 +153,13 @@ class TestPoints(unittest.TestCase):
         dice = Dice()
         dice.dice = [1, 2, 1, 2, 1]
 
-        self.assertEqual([1, 3], unos_rethrows(dice))
+        self.assertEqual([1, 3], unos_rethrows(dice)[0])
+
+    def test_doses_no_rethrow(self):
+        dice = Dice()
+        dice.dice = [2, 2, 2, 2, 2]
+
+        self.assertEqual(([], 10), doses_rethrows(dice))
 
     def test_pupusa_de_queso_rethrows(self):
         dice = Dice()
