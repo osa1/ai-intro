@@ -8,6 +8,8 @@
 
 from ZacateState import Dice
 from ZacateState import Scorecard
+
+import math
 import random
 import sys
 
@@ -165,6 +167,56 @@ def max_by(f, lsts):
 # (TODO: or does it?) Also, we may choose a move that gives us more points with
 # less probability instead of a move that gives us less points with more
 # probability etc.
+
+def repeated_perm(p1, n, p2, m):
+    return ((p1 ** n) * (p2 ** m)) / (math.factorial(n) * math.factorial(m))
+
+def average(ps):
+    sum = 0
+    for p, outcome in ps:
+        sum += outcome * p
+    return sum
+
+def normalize_outcomes(ps):
+    total_prob = 0
+
+    for p, _ in ps:
+        total_prob += p
+
+    alpha = 1 / total_prob
+
+    return [ (p * alpha, outcome) for (p, outcome) in ps ]
+
+def n_rethrows(dice, n):
+    """
+    Return a set of dice to re-throw to maximize expected points from this dice
+    set. Points are calculated according to first six cards("unos", "doses",
+    "treses" etc. for example we multiply number of 2s with 2 for "doses",
+    number of 3s with 3 for "treses" etc.).
+    """
+    # index of dices that are not n
+    non_Ns_idx = filter_idx(lambda w: w != n, dice.dice)
+    non_Ns = len(non_Ns_idx)
+
+    # number of Ns in our initial set
+    ns = len(dice.dice) - non_Ns
+
+    outcomes = []
+
+    for i in range(non_Ns + 1):
+        # repeated permutation of 'i' wanted dice and 'non_Ns - i' any other dice
+        prob = repeated_perm((1.0 / 6.0) ** i, i, (5.0 / 6.0) ** (non_Ns - i), non_Ns)
+        # the points we get with this probability
+        point = (ns + i) * n
+
+        outcomes.append((prob, point))
+
+    # since we consider all possibilities, probabilities should add up to 1
+    outcomes = normalize_outcomes(outcomes)
+
+    avg_points = average(outcomes)
+
+    return (non_Ns_idx, avg_points)
 
 def unos_rethrows(dice):
     return filter_idx(lambda d: d != 1, dice.dice)

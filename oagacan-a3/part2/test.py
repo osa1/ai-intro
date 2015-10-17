@@ -118,9 +118,36 @@ class TestPoints(unittest.TestCase):
         self.assertEqual(3, min_by(len, [[1], [2, 3], [4, 5, 6], []]))
         self.assertEqual(0, min_by(len, [[1], [2, 3], [4, 5, 6]]))
 
-    def test_min_by(self):
+    def test_max_by(self):
         self.assertEqual(2, max_by(len, [[1], [2, 3], [4, 5, 6], []]))
         self.assertEqual(0, max_by(len, [[1, 2, 3, 4], [2, 3], [4, 5, 6]]))
+
+    def test_normalize_outcomes(self):
+        outcomes = [ (0.123, 10), (0.02323, 20), (0.8383, 30) ]
+        outcomes = normalize_outcomes(outcomes)
+
+        ps = 0
+        for (p, _) in outcomes:
+            ps += p
+
+        self.assertEqual(1, ps)
+
+    def test_average(self):
+        outcomes = [ (0.4, 6), (0.6, 4) ]
+        self.assertEqual(4.8, round(average(outcomes), 1))
+
+    def test_n_rethrows(self):
+        dice = Dice()
+
+        dice.dice = [1, 1, 1, 1, 2]
+        (rethrows, point) = n_rethrows(dice, 1)
+        self.assertEqual([4], rethrows)
+        self.assertEqual(4.17, round(point, 2))
+
+        dice.dice = [2, 1, 2, 2, 2]
+        (rethrows, point) = n_rethrows(dice, 2)
+        self.assertEqual([1], rethrows)
+        self.assertEqual(8.33, round(point, 2))
 
     def test_unos_rethrow(self):
         dice = Dice()
