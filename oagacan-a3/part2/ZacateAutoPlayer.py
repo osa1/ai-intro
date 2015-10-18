@@ -5,70 +5,42 @@
 # Based on skeleton code by D. Crandall
 
 ################################################################################
-# NOTE [Brute-force approach]
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# NOTE [Our solution]
+# ~~~~~~~~~~~~~~~~~~~
 #
-# The way I attack problems is usually this: I first design or maybe even
-# implement a brute-force solution, then if needed I optimize on that.
+# Our solution is very simple. First, it doesn't take extra 35 points that comes
+# from first 6 cards. Second, it's almost like a brute-force search, simply
+# because 1) it was feasible(runs fast enough)  2) it returned good results(can
+# achieve 200 mean score) 3) it was very easy to program.
 #
-# Let's think about how we can come up with a brute-force solution for this
-# problem.
+# Other more advanced probabilistic solutions that I've tried(see git history),
+# were too hard to program.
 #
-# Let's say the points we currently get is P. We can consider re-throwing all
-# subset of our dice. Given that we have 5 dice, that'd make 2^5 = 32 dice
-# sets(actually this is not really a set since we have repetitions).
+# Here's how the current solution works:
 #
-# Then for each subset, we consider what happens if we re-throw that subset.
-# Let's say we consider a subset with 4 dice. We have 6^4 = 1296 different
-# outcomes, each one has same probability, but we have repetitions. For every
-# outcome, we check maximum points we could get.
+# We simply consider all possible re-throws. Let's say we can re-throw [1, 4].
+# We consider all possible outcomes, and we take the average of maximum points
+# we can get from that each possible outcome. In this example, since we're
+# re-throwing 2 dice, we can have 6 ** 2 different outcomes. For every outcome,
+# we consider available cards, and we note the maximum points we can get.
 #
-# At this point here's all the information we have:
+# After noting averages of every possible re-throw, we simply choose the best
+# one.
 #
-# - Best points we can get, without any re-throws.
-# - For each subset of dice, points we can get with a re-throw. Each one has
-#   same probability(but we have repetitions).
+# Note that this algorithm handles not re-throwing also. If the re-throw [] is
+# gives us best result, it simply returns [] which means not re-throwing
+# anything.
 #
-# Now, under what circumstances should we re-throw instead of accepting current
-# dice set? I have no ideas, but let's say we re-throw if we have at least 30%
-# of probability that we'll get a better point.
+# This is too naive in so many ways. First, the best player might consider
+# whether this is the first re-throw or the second, and depending on that it
+# might do different moves. Second, this way of maximizing the score is probably
+# not the best way. Even though I coulnd't think of a specific example, I think
+# to truly maximize the points, we may sometimes want to just use a bad card at,
+# only to save good cards to next turns.
 #
-# Now we need to calculate some probabilities. Our results tables have
-# repetitions. If we have two entries in table entry for re-throwing all 5 dice
-# that give us same points, this means that probability of having this points is
-# actually not 1 / all_possibilities, it's larger.
+# Heart of the algorithm is search() and best_card() functions.
 #
-# So we need to remove repetitions and generate probabilities.
-#
-# Here's how we generate the table for this:
-#
-# - For each _distinct_ subset of current dice:
-#   (by _distinct_ we mean that if we currently have [1, 1, 1, 1, 2],
-#   [0, 1], [0, 2], [0, 3] etc. are all the same)
-#
-#   - We check if the outcome is in the table. If it is, we increment it's
-#     probability by one.
-#
-#   - If it's not in the table, we create the entry with probability one.
-#
-# - Then, for each entry in the table, we calculate maximum points we get, and
-#   note the card that gives this. (of course we take care of previously used
-#   cards etc.)
-#
-# - Then, we normalize probabilities. We apply the usual procedure etc.
-#
-# - If there's a chance that with more than 30% probability we increase our
-#   income, then we do the re-throw.
-#
-# (We should probably play around with 30% to find a better number here)
-#
-# Of course, this is a very naive implementation. We don't consider the fact
-# that we can re-throw one more time if first time we don't get good result. We
-# also don't consider the fact that with current set of dice, we may consider
-# having less points, just to save some cards to better sets.
-#
-# Still, I think it's a good spot between super powerful but hard to code vs.
-# easy to code but dumb.
+# Best observed result: 204.58 (mean)
 #
 ################################################################################
 
@@ -175,14 +147,14 @@ def max_by(f, lsts):
 
     return max_idx
 
-###############################################################################
-# Brute-force approach, as described in NOTE [Brute-force approach]
-###############################################################################
-
 def subsets(lst):
     for set_size in range(len(lst) + 1):
         for comb in itertools.combinations(lst, set_size):
             yield comb
+
+###############################################################################
+# Brute-force approach, as described in NOTE [Brute-force approach]
+###############################################################################
 
 def rethrow_possibilities(dice, rethrow_idxs):
     # TODO: Implementing this as a generator is tricky, we're returning a list
@@ -214,7 +186,6 @@ def search(dice, available_cards):
 
             rethrow_points += best_card(outcome, available_cards)[1]
             rethrows       += 1
-
 
         table[subset_idxs_tuple] = float(rethrow_points) / float(rethrows)
 
@@ -262,6 +233,7 @@ def available_cards(scorecard):
         ret[key] = CATFNS[key]
     return ret
 
+
 class MyPlayer1:
 
     def __init__(self):
@@ -283,6 +255,7 @@ class MyPlayer1:
         cards = available_cards(scorecard)
         return best_card(dice.dice, cards)[0]
 
+
 class TotalN00b:
     def first_roll(self, dice, scorecard):
         return [0] # always re-roll first die (blindly)
@@ -296,6 +269,7 @@ class TotalN00b:
 
     def __available_cards(self, scorecard):
         return ALL_CARDS - set(scorecard.scorecard.keys())
+
 
 # ZacateAutoPlayer = TotalN00b
 ZacateAutoPlayer = MyPlayer1
