@@ -1,0 +1,54 @@
+# Question 4
+
+P(recvNo | sentYes) = 40%
+P(recvYes | sentNo) = 20%
+
+P(rainNext |   rainToday) = 65%
+P(rainNext | - rainToday) = 25%
+
+## (a)
+
+sent1 -----> sent2 -----> sent3 -----> sent4
+  |            |            |            |
+  V            V            V            V
+recvd1       recvd2       recvd3       recvd4
+
+"sent": A yes message is sent.
+"recvd": A yes message is received.
+
+sent1 influences sent2, because if it rained yesterday we know there's 65%
+probability that it's going to rain today. So if we sent "yes" yesterday the
+probability that we're going to send "yes" today is 65%.
+
+recvd1 influences recvd2, because for example if we know we got a "yes"
+yesterday, we can say something about the probability that we'll read a "yes"
+today, because we know that it rained yesterday with 60% probability, and if it
+rained yesterday it'll rain today with 65% probability. When combined, this
+makes the probability that today it'll rain and the sensor will send a "yes"
+39%. From that number we can further infer that the probability we're going to
+read a "yes" is 39% * 60% = 23%.
+
+sent1 influences recvd1: This follows from the problem description.
+
+## (b)
+
+We know P(rain2nd) = 65% and P(- rain2nd) = 35%, because we know it rained the
+first day.
+
+Question asks P(rain4th).
+
+P(rain4th) = P(rain4th | rain3rd) . P(rain3rd)
+                + P(rain4th | - rain3rd) .  P(-rain3rd)
+
+P(rain3rd) = P(rain3rd | rain2nd) . P(rain2nd)
+                + P(rain3rd | - rain2nd) .  P(rain2nd)
+
+P(rain2nd)   = 65%
+P(- rain2nd) = 35%
+
+P(rain3rd) = 65% . 65% + 25% . 35%
+           = 51%
+P(- rain3rd) = 49%
+
+P(rain4th) = 65% . 51% + 25% . 49%
+P(rain4th) = 45%
