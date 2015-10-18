@@ -5,10 +5,77 @@
 # Based on skeleton code by D. Crandall
 
 ################################################################################
+# NOTE [Brute-force approach]
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# The way I attack problems is usually this: I first design or maybe even
+# implement a brute-force solution, then if needed I optimize on that.
+#
+# Let's think about how we can come up with a brute-force solution for this
+# problem.
+#
+# Let's say the points we currently get is P. We can consider re-throwing all
+# subset of our dice. Given that we have 5 dice, that'd make 2^5 = 32 dice
+# sets(actually this is not really a set since we have repetitions).
+#
+# Then for each subset, we consider what happens if we re-throw that subset.
+# Let's say we consider a subset with 4 dice. We have 6^4 = 1296 different
+# outcomes, each one has same probability, but we have repetitions. For every
+# outcome, we check maximum points we could get.
+#
+# At this point here's all the information we have:
+#
+# - Best points we can get, without any re-throws.
+# - For each subset of dice, points we can get with a re-throw. Each one has
+#   same probability(but we have repetitions).
+#
+# Now, under what circumstances should we re-throw instead of accepting current
+# dice set? I have no ideas, but let's say we re-throw if we have at least 30%
+# of probability that we'll get a better point.
+#
+# Now we need to calculate some probabilities. Our results tables have
+# repetitions. If we have two entries in table entry for re-throwing all 5 dice
+# that give us same points, this means that probability of having this points is
+# actually not 1 / all_possibilities, it's larger.
+#
+# So we need to remove repetitions and generate probabilities.
+#
+# Here's how we generate the table for this:
+#
+# - For each _distinct_ subset of current dice:
+#   (by _distinct_ we mean that if we currently have [1, 1, 1, 1, 2],
+#   [0, 1], [0, 2], [0, 3] etc. are all the same)
+#
+#   - We check if the outcome is in the table. If it is, we increment it's
+#     probability by one.
+#
+#   - If it's not in the table, we create the entry with probability one.
+#
+# - Then, for each entry in the table, we calculate maximum points we get, and
+#   note the card that gives this. (of course we take care of previously used
+#   cards etc.)
+#
+# - Then, we normalize probabilities. We apply the usual procedure etc.
+#
+# - If there's a chance that with more than 30% probability we increase our
+#   income, then we do the re-throw.
+#
+# (We should probably play around with 30% to find a better number here)
+#
+# Of course, this is a very naive implementation. We don't consider the fact
+# that we can re-throw one more time if first time we don't get good result. We
+# also don't consider the fact that with current set of dice, we may consider
+# having less points, just to save some cards to better sets.
+#
+# Still, I think it's a good spot between super powerful but hard to code vs.
+# easy to code but dumb.
+#
+################################################################################
 
 from ZacateState import Dice
 from ZacateState import Scorecard
 
+import itertools
 import math
 import random
 import sys
@@ -19,7 +86,7 @@ import sys
 
 def __count_die(dice, n):
     ret = 0
-    for die in dice.dice:
+    for die in dice:
         if die == n:
             ret += 1
     return ret
@@ -47,24 +114,24 @@ def seises_points(dice):
     return __mult_dice(dice, 6)
 
 def pupusa_de_queso_points(dice):
-    s = sorted(dice.dice)
+    s = sorted(dice)
     if s == [1, 2, 3, 4, 5] or s == [2, 3, 4, 5, 6]:
         return 40
     return 0
 
 def pupusa_de_frijol_points(dice):
-    c1 = 3 in dice.dice and 4 in dice.dice
+    c1 = 3 in dice and 4 in dice
 
-    c1_1 = 1 in dice.dice and 2 in dice.dice
-    c1_2 = 2 in dice.dice and 5 in dice.dice
-    c1_3 = 5 in dice.dice and 6 in dice.dice
+    c1_1 = 1 in dice and 2 in dice
+    c1_2 = 2 in dice and 5 in dice
+    c1_3 = 5 in dice and 6 in dice
 
     if c1 and (c1_1 or c1_2 or c1_3):
         return 30
     return 0
 
 def elote_points(dice):
-    ds = set(dice.dice)
+    ds = set(dice)
     if len(ds) == 2:
         return 25
     return 0
@@ -72,13 +139,13 @@ def elote_points(dice):
 def triple_points(dice):
     for i in range(1, 7):
         if __count_die(dice, i) >= 3:
-            return sum(dice.dice)
+            return sum(dice)
     return 0
 
 def cuadruple_points(dice):
     for i in range(1, 7):
         if __count_die(dice, i) >= 4:
-            return sum(dice.dice)
+            return sum(dice)
     return 0
 
 def quintupulo_points(dice):
@@ -88,7 +155,7 @@ def quintupulo_points(dice):
     return 0
 
 def tamal_points(dice):
-    return sum(dice.dice)
+    return sum(dice)
 
 ################################################################################
 # Functions for determining which subset to re-throw for gaining points from
@@ -159,6 +226,76 @@ def max_by(f, lsts):
 
     return max_idx
 
+def mult(lst):
+    """
+    Like built-in sum(), but multiplies.
+    """
+    ret = 1
+    for e in lst:
+        ret *= e
+    return ret
+
+###############################################################################
+# Brute-force approach, as described in NOTE [Brute-force approach]
+###############################################################################
+
+def subsets(lst):
+    for set_size in range(len(lst) + 1):
+        for comb in itertools.combinations(lst, set_size):
+            yield comb
+
+def rethrow_possibilities(dice, rethrow_idxs):
+    # TODO: Implementing this as a generator is tricky, we're returning a list
+    # for now.
+    rethrows = len(rethrow_idxs)
+    ret = [ dice[:] for _ in range(6 ** rethrows) ]
+
+    prods = itertools.product(range(1, 7), repeat=rethrows)
+
+    for i, p in enumerate(prods):
+        for idx_idx, idx in enumerate(rethrow_idxs):
+            ret[i][idx] = p[idx_idx]
+
+    return ret
+
+def search(dice, available_cards):
+    idxs = range(len(dice))
+
+    table = {}
+
+    for subset_idxs in subsets(idxs):
+        # print subset_idxs
+        for dice in rethrow_possibilities(dice, subset_idxs):
+            dice_tuple = tuple(sorted(dice))
+            try:
+                entry = table[dice_tuple]
+                entry["p"] += 1
+            except KeyError:
+                table[dice_tuple] = { "p" : 1 }
+
+    # Next, we generate maximum points we could get from a dice set, with which
+    # card to use to get that points
+    for k, v in table.iteritems():
+        for card, (card_points, _) in available_cards.iteritems():
+            current_max = v.get("max_points", -1)
+            cp = card_points(k)
+            if cp > current_max:
+                v["max_points"] = cp
+                v["card"] = card
+
+    # Normalize probabilities
+    total = 0
+    for v in table.itervalues():
+        total += v["p"]
+
+    alpha = 1.0 / float(total)
+
+    for v in table.itervalues():
+        v["p"] *= alpha
+
+    for k, v in table.iteritems():
+        print k, v
+
 ###############################################################################
 
 # TODO: These functions should return the probability that after rethrows, we
@@ -198,11 +335,11 @@ def n_rethrows(dice, n):
     dice, except when all of the dice in the set is == n.
     """
     # index of dices that are not n
-    non_Ns_idx = filter_idx(lambda w: w != n, dice.dice)
+    non_Ns_idx = filter_idx(lambda w: w != n, dice)
     non_Ns = len(non_Ns_idx)
 
     # number of Ns in our initial set
-    ns = len(dice.dice) - non_Ns
+    ns = len(dice) - non_Ns
 
     outcomes = []
 
@@ -239,14 +376,38 @@ def cincos_rethrows(dice):
 def seises_rethrows(dice):
     return n_rethrows(dice, 6)
 
-def pupusa_de_queso_rethrows(dice):
-    s = set(dice.dice)
-    groups = group_dice(dice.dice)
+###############################################################################
 
-    # I'm not sure if we should handle this case, but first check if we need to
-    # re-throw at all
+def repetitions(lst):
+    m = {}
+
+    for e in lst:
+        m[e] = m.get(e, 0) + 1
+
+    return [ v for _, v in m.iteritems() ]
+
+# def prob_points(lst):
+#     """
+#     Given a list of (dice set, points), calculate average points.
+#     Note that dice sets in the list may have different number of dice.
+#     """
+#     probs = []
+#
+#     for dice, points in lst:
+#         dice_prob = (1.0 / 6.0) ** len(dice)
+#         dice_reps = repetitions(dice)
+#         prob      = dice_prob / float(mult(map(lambda r: math.factorial(r), dice_reps)))
+#
+#         probs.append((prob, points))
+#
+#     return normalize_outcomes(probs)
+
+def pupusa_de_queso_rethrows(dice):
+    s = set(dice)
+    groups = group_dice(dice)
+
     if len(s) == 5:
-        return []
+        return ( [], pupusa_de_queso_points(dice) )
 
     # First condition, we need 5 distinct dice
     elif len(s) < 5:
@@ -258,8 +419,12 @@ def pupusa_de_queso_rethrows(dice):
             if len(group) > 1:
                 rethrows.extend(group[1:])
 
-        # TODO: This is not quite right. We may want to throw al 6s if we have
-        # a one, for example.
+        # One last update, if we have both ones and sixes, then we re-throw all
+        # of ones or sixes:
+        if len(groups[0]) != 0 and len(groups[5]) != 0:
+            # Let's re-throw sixes
+            # We only add first die because the rest is added in previous loop
+            rethrows.apppend(group[5][0])
 
         return rethrows
 
@@ -286,7 +451,7 @@ def pupusa_de_frijol_rethrows(dice):
     #   - We have 2, 3, 4, 5
     #   - We have 3, 4, 5, 6
 
-    groups = group_dice(dice.dice)
+    groups = group_dice(dice)
 
     # Consider case 1
     case1_rethrows = []
@@ -321,7 +486,7 @@ def elote_rethrows(dice):
     if elote_points(dice) != 0:
         return []
 
-    groups = group_dice(dice.dice)
+    groups = group_dice(dice)
 
     # Two pass, because len(groups) == 5.
     biggest_group_idx = max_by(len, groups)
@@ -358,7 +523,7 @@ def triple_rethrows(dice):
     if triple_points(dice) != 0:
         return []
 
-    groups = group_dice(dice.dice)
+    groups = group_dice(dice)
     biggest_group_idx = max_by(len, groups)
     rethrows = []
 
@@ -376,7 +541,7 @@ def cuadruple_rethrows(dice):
     if cuadruple_points(dice) != 0:
         return []
 
-    groups = group_dice(dice.dice)
+    groups = group_dice(dice)
     biggest_group_idx = max_by(len, groups)
     rethrows = []
 
@@ -388,7 +553,7 @@ def cuadruple_rethrows(dice):
 
 def quintupulo_rethrows(dice):
     # Only way to get points is to collect all of them into one group
-    groups = group_dice(dice.dice)
+    groups = group_dice(dice)
     biggest_group_idx = max_by(len, groups)
     rethrows = []
 
