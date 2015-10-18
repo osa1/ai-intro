@@ -217,6 +217,7 @@ def max_by(f, lsts):
     # sys.minint, and -sys.maxint is in range. minint is actually
     # (-sys.maxint - 1).
     max_score = - sys.maxint
+    max_idx = None
 
     for idx, lst in enumerate(lsts):
         score = f(lst)
@@ -264,37 +265,32 @@ def search(dice, available_cards):
     table = {}
 
     for subset_idxs in subsets(idxs):
-        # print subset_idxs
-        for dice in rethrow_possibilities(dice, subset_idxs):
-            dice_tuple = tuple(sorted(dice))
-            try:
-                entry = table[dice_tuple]
-                entry["p"] += 1
-            except KeyError:
-                table[dice_tuple] = { "p" : 1 }
+        subset_idxs_tuple = tuple(sorted(subset_idxs))
 
-    # Next, we generate maximum points we could get from a dice set, with which
-    # card to use to get that points
-    for k, v in table.iteritems():
-        for card, card_points in available_cards.iteritems():
-            current_max = v.get("max_points", -1)
-            cp = card_points(k)
-            if cp > current_max:
-                v["max_points"] = cp
-                v["card"] = card
+        rethrow_points = 0
+        rethrows       = 0
 
-    # Normalize probabilities
-    total = 0
-    for v in table.itervalues():
-        total += v["p"]
+        for outcome in rethrow_possibilities(dice, subset_idxs):
+            outcome_tuple = tuple(sorted(outcome))
 
-    alpha = 1.0 / float(total)
+            rethrow_points += best_card(outcome, available_cards)[1]
+            rethrows       += 1
 
-    for v in table.itervalues():
-        v["p"] *= alpha
 
-    for k, v in table.iteritems():
-        print k, v
+        table[subset_idxs_tuple] = float(rethrow_points) / float(rethrows)
+
+    return table
+
+def best_card(dice, cards):
+    max_points = -1
+
+    for c, p in cards.iteritems():
+        points = p(dice)
+        if points > max_points:
+            max_points = points
+            max_card = c
+
+    return (max_card, max_points)
 
 ###############################################################################
 
@@ -339,7 +335,7 @@ CATFNS = {
         "cincos": cincos_points,
         "seises": seises_points,
         "pupusa de queso": pupusa_de_queso_points,
-        "pupusa_de_frijol": pupusa_de_frijol_points,
+        "pupusa de frijol": pupusa_de_frijol_points,
         "elote": elote_points,
         "triple": triple_points,
         "cuadruple": cuadruple_points,
@@ -355,11 +351,28 @@ def available_cards(scorecard):
         ret[key] = CATFNS[key]
     return ret
 
-class ZacateAutoPlayer:
+class MyPlayer1:
 
     def __init__(self):
         pass
 
+    def do_ur_best(self, dice, scorecard):
+        cards = available_cards(scorecard)
+        outcomes = search(dice.dice, cards).items()
+        best_outcome_idx = max_by(lambda (k, v): v, outcomes)
+        return list(outcomes[best_outcome_idx][0])
+
+    def first_roll(self, dice, scorecard):
+        return self.do_ur_best(dice, scorecard)
+
+    def second_roll(self, dice, scorecard):
+        return self.do_ur_best(dice, scorecard)
+
+    def third_roll(self, dice, scorecard):
+        cards = available_cards(scorecard)
+        return best_card(dice.dice, cards)[0]
+
+class TotalN00b:
     def first_roll(self, dice, scorecard):
         return [0] # always re-roll first die (blindly)
 
@@ -372,6 +385,9 @@ class ZacateAutoPlayer:
 
     def __available_cards(self, scorecard):
         return ALL_CARDS - set(scorecard.scorecard.keys())
+
+# ZacateAutoPlayer = TotalN00b
+ZacateAutoPlayer = MyPlayer1
 
 ################################################################################
 
