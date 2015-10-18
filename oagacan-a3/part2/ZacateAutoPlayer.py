@@ -157,60 +157,8 @@ def quintupulo_points(dice):
 def tamal_points(dice):
     return sum(dice)
 
-################################################################################
-# Functions for determining which subset to re-throw for gaining points from
-# some particular card.
-#
-# In cases where we already gain points, we try to increase the points.
-################################################################################
-
-# For unos through seises, we just re-throw every dice that doesn't give us any
-# points.
-
 ###############################################################################
 # First, some utils
-
-def filter_idx(p, lst):
-    """A helper function that works like filter, except returns indexes of
-    elements that passed the test instead of returning a new list.
-    """
-    idxs = []
-    for i in range(len(lst)):
-        if p(lst[i]):
-            idxs.append(i)
-    return idxs
-
-def find_idx(n, lst):
-    """A specialized version of 'filter_idx(lambda w: w == n, lst)'.
-    """
-    idxs = []
-    for i in range(len(lst)):
-        if n == lst[i]:
-            idxs.append(i)
-    return idxs
-
-def group_dice(lst):
-    """Returns a list of 6 lists, each one holds indexes of corresponding dice
-    of it's own index. Example:
-
-    >>> group_dice([1, 2, 3, 5, 5, 1])
-    [[0, 5], [1], [2], [], [3, 4], []]
-    """
-    ret = [ [] for _ in range(6) ]
-    for idx in range(len(lst)):
-        ret[lst[idx] - 1].append(idx)
-    return ret
-
-def min_by(f, lsts):
-    min_score = sys.maxint
-
-    for idx, lst in enumerate(lsts):
-        score = f(lst)
-        if score < min_score:
-            min_score = score
-            min_idx = idx
-
-    return min_idx
 
 def max_by(f, lsts):
     # This is yet another weird Python "convenience", it doesn't provide
@@ -226,15 +174,6 @@ def max_by(f, lsts):
             max_idx = idx
 
     return max_idx
-
-def mult(lst):
-    """
-    Like built-in sum(), but multiplies.
-    """
-    ret = 1
-    for e in lst:
-        ret *= e
-    return ret
 
 ###############################################################################
 # Brute-force approach, as described in NOTE [Brute-force approach]
@@ -291,34 +230,6 @@ def best_card(dice, cards):
             max_card = c
 
     return (max_card, max_points)
-
-###############################################################################
-
-# TODO: These functions should return the probability that after rethrows, we
-# get the points. Otherwise they're pretty much useless. Notice that rethrowing
-# less number of dice doesn't mean having higher change of getting points.
-# (TODO: or does it?) Also, we may choose a move that gives us more points with
-# less probability instead of a move that gives us less points with more
-# probability etc.
-
-def repeated_perm(p1, n, p2, m):
-    return ((p1 ** n) * (p2 ** m)) / (math.factorial(n) * math.factorial(m))
-
-def average(ps):
-    sum = 0
-    for p, outcome in ps:
-        sum += outcome * p
-    return sum
-
-def normalize_outcomes(ps):
-    total_prob = 0
-
-    for p, _ in ps:
-        total_prob += p
-
-    alpha = 1 / total_prob
-
-    return [ (p * alpha, outcome) for (p, outcome) in ps ]
 
 ################################################################################
 # Player
