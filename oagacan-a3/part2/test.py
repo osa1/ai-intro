@@ -127,11 +127,6 @@ class TestPoints(unittest.TestCase):
         outcomes = [ (0.4, 6), (0.6, 4) ]
         self.assertEqual(4.8, round(average(outcomes), 1))
 
-    def test_repetitions(self):
-        self.assertEqual([1, 2, 3], repetitions([1, 2, 3, 2, 3, 3]))
-        self.assertEqual([], repetitions([]))
-        self.assertEqual([1], repetitions([1]))
-
     def test_subsets(self):
         for i in range(5):
             lst = range(i)
@@ -147,104 +142,6 @@ class TestPoints(unittest.TestCase):
                 rethrow_possibilities([1, 2], [1]))
 
         # print rethrow_possibilities([1, 2], [0, 1])
-
-    # def test_prob_points(self):
-    #     outcomes = [
-    #             # We may decide to try re-throwing 1 die, which may give us 10
-    #             # points
-    #             ([1], 10),
-    #             # Or, we may decide to try re-throwing 3 dice, which may give
-    #             # us 100 points
-    #             ([1, 1, 1], 100)
-    #             ]
-
-    def test_n_rethrows(self):
-        dice = [1, 1, 1, 1, 2]
-        (rethrows, point) = n_rethrows(dice, 1)
-        self.assertEqual([4], rethrows)
-        self.assertEqual(4.17, round(point, 2))
-
-        dice = [2, 1, 2, 2, 2]
-        (rethrows, point) = n_rethrows(dice, 2)
-        self.assertEqual([1], rethrows)
-        self.assertEqual(8.33, round(point, 2))
-
-    def test_unos_rethrow(self):
-        dice = [1, 2, 1, 2, 1]
-
-        self.assertEqual([1, 3], unos_rethrows(dice)[0])
-
-    def test_doses_no_rethrow(self):
-        dice = [2, 2, 2, 2, 2]
-
-        self.assertEqual(([], 10), doses_rethrows(dice))
-
-    def test_pupusa_de_queso_rethrows(self):
-        dice = Dice()
-
-        dice = [2, 4, 1, 3, 5]
-        self.assertEqual([], pupusa_de_queso_rethrows(dice)[0])
-
-        # TODO: We actually have multiple choices with same probabilities,
-        # maybe make tests more flexible for this
-
-        dice = [2, 4, 1, 3, 1]
-        self.assertEqual([4], pupusa_de_queso_rethrows(dice))
-
-        dice = [1, 1, 1, 1, 1]
-        self.assertEqual([1, 2, 3, 4], pupusa_de_queso_rethrows(dice))
-
-    def test_pupusa_de_frijol_rethrows(self):
-        dice = Dice()
-
-        dice = [1, 2, 4, 4, 5]
-
-        # TODO: We have two possible moves with same probabilities here:
-        #    we can target [1, 2, 3, 4] and rethrow 3 and 4,
-        # or we can target [2, 3, 4, 5] and rethrow 0 and 3.
-        # Maybe we should extend tests to take those into account when
-        # comparing results.
-        # self.assertEqual([3, 4], pupusa_de_frijol_rethrows(dice))
-        self.assertEqual([0, 3], pupusa_de_frijol_rethrows(dice))
-
-        # TODO: Add more tests, this looks a bit tricky.
-
-    def test_elote_rethrows(self):
-        dice = Dice()
-
-        dice = [1, 1, 2, 2, 3]
-        self.assertEqual([4], elote_rethrows(dice))
-
-        dice = [1, 1, 2, 3, 4]
-        # TODO: Again, we have multiple choices with same probabilities here
-        self.assertEqual([3, 4], elote_rethrows(dice))
-
-    def test_triple_rethrows(self):
-        dice = Dice()
-
-        dice = [1, 2, 1, 2, 1]
-        self.assertEqual([], triple_rethrows(dice))
-
-        dice = [1, 2, 1, 2, 3]
-        self.assertEqual([1, 3, 4], triple_rethrows(dice))
-
-    def test_cuadruple_rethrows(self):
-        dice = Dice()
-
-        dice = [1, 2, 1, 2, 1]
-        self.assertEqual([1, 3], cuadruple_rethrows(dice))
-
-        dice = [1, 2, 1, 1, 1]
-        self.assertEqual([], cuadruple_rethrows(dice))
-
-    def test_quintupulo_rethrows(self):
-        dice = Dice()
-
-        dice = [1, 2, 1, 2, 1]
-        self.assertEqual([1, 3], quintupulo_rethrows(dice))
-
-        dice = [1, 2, 1, 1, 1]
-        self.assertEqual([1], quintupulo_rethrows(dice))
 
 ################################################################################
 

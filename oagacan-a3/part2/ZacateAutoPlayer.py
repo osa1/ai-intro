@@ -276,7 +276,7 @@ def search(dice, available_cards):
     # Next, we generate maximum points we could get from a dice set, with which
     # card to use to get that points
     for k, v in table.iteritems():
-        for card, (card_points, _) in available_cards.iteritems():
+        for card, card_points in available_cards.iteritems():
             current_max = v.get("max_points", -1)
             cp = card_points(k)
             if cp > current_max:
@@ -324,254 +324,6 @@ def normalize_outcomes(ps):
 
     return [ (p * alpha, outcome) for (p, outcome) in ps ]
 
-def n_rethrows(dice, n):
-    """
-    Return a set of dice to re-throw to maximize expected points from this dice
-    set. Points are calculated according to first six cards("unos", "doses",
-    "treses" etc. for example we multiply number of 2s with 2 for "doses",
-    number of 3s with 3 for "treses" etc.).
-
-    Note that in this type of cards, it always makes sense to re-throw some
-    dice, except when all of the dice in the set is == n.
-    """
-    # index of dices that are not n
-    non_Ns_idx = filter_idx(lambda w: w != n, dice)
-    non_Ns = len(non_Ns_idx)
-
-    # number of Ns in our initial set
-    ns = len(dice) - non_Ns
-
-    outcomes = []
-
-    for i in range(non_Ns + 1):
-        # repeated permutation of 'i' wanted dice and 'non_Ns - i' any other dice
-        prob = repeated_perm((1.0 / 6.0) ** i, i, (5.0 / 6.0) ** (non_Ns - i), non_Ns)
-        # the points we get with this probability
-        point = (ns + i) * n
-
-        outcomes.append((prob, point))
-
-    # since we consider all possibilities, probabilities should add up to 1
-    outcomes = normalize_outcomes(outcomes)
-
-    avg_points = average(outcomes)
-
-    return (non_Ns_idx, avg_points)
-
-def unos_rethrows(dice):
-    return n_rethrows(dice, 1)
-
-def doses_rethrows(dice):
-    return n_rethrows(dice, 2)
-
-def treses_rethrows(dice):
-    return n_rethrows(dice, 3)
-
-def cuatros_rethrows(dice):
-    return n_rethrows(dice, 4)
-
-def cincos_rethrows(dice):
-    return n_rethrows(dice, 5)
-
-def seises_rethrows(dice):
-    return n_rethrows(dice, 6)
-
-###############################################################################
-
-def repetitions(lst):
-    m = {}
-
-    for e in lst:
-        m[e] = m.get(e, 0) + 1
-
-    return [ v for _, v in m.iteritems() ]
-
-# def prob_points(lst):
-#     """
-#     Given a list of (dice set, points), calculate average points.
-#     Note that dice sets in the list may have different number of dice.
-#     """
-#     probs = []
-#
-#     for dice, points in lst:
-#         dice_prob = (1.0 / 6.0) ** len(dice)
-#         dice_reps = repetitions(dice)
-#         prob      = dice_prob / float(mult(map(lambda r: math.factorial(r), dice_reps)))
-#
-#         probs.append((prob, points))
-#
-#     return normalize_outcomes(probs)
-
-def pupusa_de_queso_rethrows(dice):
-    s = set(dice)
-    groups = group_dice(dice)
-
-    if len(s) == 5:
-        return ( [], pupusa_de_queso_points(dice) )
-
-    # First condition, we need 5 distinct dice
-    elif len(s) < 5:
-        # For every group with more than one dice, we re-throw all the dice
-        # except first one in that group
-        rethrows = []
-
-        for group in groups:
-            if len(group) > 1:
-                rethrows.extend(group[1:])
-
-        # One last update, if we have both ones and sixes, then we re-throw all
-        # of ones or sixes:
-        if len(groups[0]) != 0 and len(groups[5]) != 0:
-            # Let's re-throw sixes
-            # We only add first die because the rest is added in previous loop
-            rethrows.apppend(group[5][0])
-
-        return rethrows
-
-    # Second condition, either 1 or 6 must be missing
-    else:
-        if len(groups[0]) > 1 and len(groups[5]) > 1:
-            if len(groups[0]) < len(groups[5]):
-                return groups[0]
-            return groups[5]
-        else:
-            # There's a group with more than one die, find it
-            for group in groups:
-                if len(group) > 1:
-                    return [group[0]]
-
-    raise RuntimeError("Checks are not exhaustive.")
-
-def pupusa_de_frijol_rethrows(dice):
-    if pupusa_de_frijol_points(dice) != 0:
-        return []
-
-    # One of these conditions should hold:
-    #   - We have 1, 2, 3, 4
-    #   - We have 2, 3, 4, 5
-    #   - We have 3, 4, 5, 6
-
-    groups = group_dice(dice)
-
-    # Consider case 1
-    case1_rethrows = []
-    for group_idx, group in enumerate(groups):
-        if group_idx in [1, 2, 3, 4]:
-            case1_rethrows.extend(group[1:])
-        else:
-            case1_rethrows.extend(group)
-
-    # Consider case 2
-    case2_rethrows = []
-    for group_idx, group in enumerate(groups):
-        if group_idx in [2, 3, 4, 5]:
-            case2_rethrows.extend(group[1:])
-        else:
-            case2_rethrows.extend(group)
-
-    # Consider case 3
-    case3_rethrows = []
-    for group_idx, group in enumerate(groups):
-        if group_idx in [3, 4, 5, 6]:
-            case3_rethrows.extend(group[1:])
-        else:
-            case3_rethrows.extend(group)
-
-    rethrows = [case1_rethrows, case2_rethrows, case3_rethrows]
-    return rethrows[min_by(len, rethrows)]
-
-def elote_rethrows(dice):
-    # 3 same + 2 same
-
-    if elote_points(dice) != 0:
-        return []
-
-    groups = group_dice(dice)
-
-    # Two pass, because len(groups) == 5.
-    biggest_group_idx = max_by(len, groups)
-
-    second_biggest_group_idx = None
-    second_biggest_group_len = None
-
-    for group_idx, group in enumerate(groups):
-        if group_idx == biggest_group_idx:
-            continue
-
-        if second_biggest_group_idx == None or len(group) > second_biggest_group_len:
-            second_biggest_group_idx = group_idx
-            second_biggest_group_len = len(group)
-
-    # Now that we choose which groups to collect dice into, re-throw everything
-    # else.
-    rethrows = []
-
-    for group_idx, group in enumerate(groups):
-        if group_idx != biggest_group_idx and group_idx != second_biggest_group_idx:
-            rethrows.extend(group)
-
-    return rethrows
-
-def triple_rethrows(dice):
-    # 3 same
-
-    # TODO: This algorithm is probably borked. Let's say we have this:
-    # [1, 1, 2, 2, 3]
-    # Should we re-throw all 2s? We should calculate and see what's the best
-    # move here.
-
-    if triple_points(dice) != 0:
-        return []
-
-    groups = group_dice(dice)
-    biggest_group_idx = max_by(len, groups)
-    rethrows = []
-
-    for group_idx, group in enumerate(groups):
-        if group_idx != biggest_group_idx:
-            rethrows.extend(group)
-
-    return rethrows
-
-def cuadruple_rethrows(dice):
-    # 4 same
-    # This is like triple_rethrows, except we don't need to consider cases like
-    # [1, 1, 2, 2, 3]
-
-    if cuadruple_points(dice) != 0:
-        return []
-
-    groups = group_dice(dice)
-    biggest_group_idx = max_by(len, groups)
-    rethrows = []
-
-    for group_idx, group in enumerate(groups):
-        if group_idx != biggest_group_idx:
-            rethrows.extend(group)
-
-    return rethrows
-
-def quintupulo_rethrows(dice):
-    # Only way to get points is to collect all of them into one group
-    groups = group_dice(dice)
-    biggest_group_idx = max_by(len, groups)
-    rethrows = []
-
-    # The algorithm is same as cuadruple, but probabilities are difference.
-    # Currently we're not calculating probabilities so essentially they're same
-    # until probabilities are fixed. FIXME
-    for group_idx, group in enumerate(groups):
-        if group_idx != biggest_group_idx:
-            rethrows.extend(group)
-
-    return rethrows
-
-def tamal_rethrows(dice):
-    # This case is interesting. We get points no matter what, but we can
-    # increase points with some trivial re-throws. For example, we can always
-    # re-throw ones. I'm leaving this case for now. TODO
-    return []
-
 ################################################################################
 # Player
 ################################################################################
@@ -580,32 +332,30 @@ ALL_CARDS = set(Scorecard.Categories)
 
 # A map from category names to point and re-throw functions
 CATFNS = {
-        "unos": (unos_points, unos_rethrows),
-        "doses": (doses_points, doses_rethrows),
-        "treses": (treses_points, treses_rethrows),
-        "cuatros": (cuatros_points, cuatros_rethrows),
-        "cincos": (cincos_points, cincos_rethrows),
-        "seises": (seises_points, seises_rethrows),
-        "pupusa de queso": (pupusa_de_queso_points, pupusa_de_queso_rethrows),
-        "pupusa_de_frijol": (pupusa_de_frijol_points, pupusa_de_frijol_rethrows),
-        "elote": (elote_points, elote_rethrows),
-        "triple": (triple_points, triple_rethrows),
-        "cuadruple": (cuadruple_points, cuadruple_rethrows),
-        "quintupulo": (quintupulo_points, quintupulo_rethrows),
-        "tamal": (tamal_points, tamal_rethrows)
+        "unos": unos_points,
+        "doses": doses_points,
+        "treses": treses_points,
+        "cuatros": cuatros_points,
+        "cincos": cincos_points,
+        "seises": seises_points,
+        "pupusa de queso": pupusa_de_queso_points,
+        "pupusa_de_frijol": pupusa_de_frijol_points,
+        "elote": elote_points,
+        "triple": triple_points,
+        "cuadruple": cuadruple_points,
+        "quintupulo": quintupulo_points,
+        "tamal": tamal_points,
         }
 
-class ZacateAutoPlayer:
+def available_cards(scorecard):
+    keys = ALL_CARDS - set(scorecard.scorecard.keys())
 
-    # An attempt:
-    # We generate best points we can get right now, and points we can get with
-    # a re-throw, with possibilities.
-    #
-    # Some potential moves will risk current points. In that case we need to
-    # consider possibilities and somehow decide whether to re-throw.
-    #
-    # It may be the case that re-throwing a set of dice will possibly make
-    # multiple cards available. We should somehow check for that.
+    ret = {}
+    for key in keys:
+        ret[key] = CATFNS[key]
+    return ret
+
+class ZacateAutoPlayer:
 
     def __init__(self):
         pass
