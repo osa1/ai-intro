@@ -179,6 +179,8 @@ To be able to refer first and secod term of (e), let's split it into two terms:
 (e1)  -Exists(Zeus) ∨ -Impotent(Zeus)
 (e2)  -Exists(Zeus) ∨ -Malevolent(Zeus)
 
+So we have (a) ∧ (b) ∧ (c) ∧ (d) ∧ (e1) ∧ (e2).
+
 Now we have terms in CNF, we apply resolution.
 
 (1) From (a) and (b) we infer
@@ -201,3 +203,31 @@ Which was our goal.
 NOTE: IIRC in the class we added negation of the goal as an axiom and derive a
 contradiction -- I don't see the point so I do it this way, I start with axioms
 and using resolution reach to the goal.
+
+--------------------------------------------------------------------------------
+# 5
+
+(a) Negation: - (∀x . (P(x) => P(x)))
+              ∃x . - (P(x) => P(x))     (negate ∀)
+              ∃x . - (- P(x) ∨ P(x))    (eliminate implication)
+          (x) ∃x . (P(x) ∧ - P(x))      (distribute negation)
+              ∃x . False                (remove unused existential variable)
+              False
+
+    Another way to prove this is to say at step (x) that there's no x that
+    makes P(x) ∧ - P(x) hold, because either P(x) or -P(x) holds, both can't
+    hold at the same time.
+
+(b) Negation: - ( (- ∃x . P(x))  => (∀x . -P(x)) )
+              - ( - (- ∃x . P(x)) ∨ (∀x . -P(x)) ) (eliminate implication)
+              - (     (∃x . P(x)) ∨ (∀x . -P(x)) ) (eliminate negation of negation)
+              ( - (∃x . P(x)) ∧ - (∀x . -P(x)) )   (distribute negation)
+              ( - (∃x . P(x)) ∧   (∃x . P(x))  )   (distribute second negation)
+
+              Let's write X for (∃x . P(x)):
+
+              - X ∧ X
+              False
+
+NOTE: Instead of deriving False, we could say "this term is a contradiction
+because it involves conjunction of a predicate and it's inverse".
