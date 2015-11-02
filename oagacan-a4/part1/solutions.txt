@@ -1,6 +1,7 @@
 Written problems
 Omer Sinan Agacan (oagacan)
 
+--------------------------------------------------------------------------------
 # 1
 
 a. ∀ a b ∈ ℤ . a + b = b + a (addition is commutative)
@@ -26,6 +27,7 @@ e. ∀ a ∈ ℤ . ∃ b ∈ ℤ . a + b = a (addition has an identity)
    ∀ a ∈ ℤ . a + 0 = a (addition has an identity, it's 0)
    ∀ a ∈ ℤ . a * 1 = a (multiplication has an identity, it's 1)
 
+--------------------------------------------------------------------------------
 # 2
 
 The entailment doesn't hold. We give two arguments,
@@ -51,6 +53,95 @@ The entailment doesn't hold. We give two arguments,
     Since those don't hold, their OR doesn't hold either:
     (∀x P(x)) ∨ (∀x Q(x))
 
+--------------------------------------------------------------------------------
 # 3
 
+We first need to make up some predicates and express statements as axioms:
 
+Happy(x)
+Loves(x, y)
+Owns(x, y)
+Visits(x, y)
+Wise(x)
+TeachesLightsaber(x, y)
+JoinsRebels(x)
+DeclaresLove(x, y)
+Friends(x, y)
+
+They have expected meanings.
+
+Now our axioms can be expressed as:
+
+(a) Owns(HanSolo, MillenniumFalcon)
+
+(b) - Happy(PrincessLeia)
+
+(c) Loves(PrincessLeia, HanSolo)
+
+(d) ∀ x . ( Owns(x, MillenniumFalcon) ∨ - Happy(x) )
+           => Visits(x, ObiWanKenobi)
+
+(e) ∀ x . Visits(x, ObiWanKenobi) => Wise(x)
+
+(f) ∀ x . ( Owns(x, MillenniumFalcon) ∧ Visits(x, ObiWanKenobi) )
+           => TeachesLightsaber(ObiWanKenobi, x)
+
+(g) ∀ x . ( ( - Happy(x) ∨ Owns(x, MillenniumFalcon) )
+             ∧ TeachesLightsaber(ObiWanKenobi, x) ) => JoinsRebels(x)
+
+(h) ∀ x y . ( - Happy(x) ∧ Loves(x, y) ) => DeclaresLove(x, y)
+
+(i) ∀ x y . ( TeachesLightsaber(ObiWanKenobi,x) ∧ DeclaresLove(y, x) ∧ Wise(y) )
+              => Friends(x, Chewbacca)
+
+
+Backward chaining:
+
+- Friends(HanSolo, Chewbacca)
+
+- ∃ y . TeachesLightsaber(ObiWanKenobi, HanSolo) ∧ DeclaresLove(y, HanSolo) ∧ Wise(y)
+
+  Split into subgoals:
+
+  - TeachesLightsaber(ObiWanKenobi, HanSolo)
+  - ∃ y . DeclaresLove(y, HanSolo) ∧ Wise(y)
+
+  First subgoal:
+
+  - Owns(HanSolo, MillenniumFalcon) ∧ Visits(HanSolo, ObiWanKenobi)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                 (a)                   we solve this as next goal
+
+  - Visits(HanSolo, ObiWanKenobi)
+  - Owns(HanSolo, MillenniumFalcon) ∨ - Happy(HanSolo)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                 (a)
+
+  Second subgoal:
+
+  - ∃ y . DeclaresLove(y, HanSolo) ∧ Wise(y)
+  - ∃ y . DeclaresLove(y, HanSolo) ∧ Visits(y, ObiWanKenobi)
+  - ∃ y . DeclaresLove(y, HanSolo) ∧ ( Owns(y, MillenniumFalcon) ∨ - Happy(y) )
+                                                                   ^^^^^^^^^^
+                                                                       (b), but we need to
+                                                                       substitute PrincessLeia for y
+
+  - DeclaresLove(PrincessLeia, HanSolo)
+  - - Happy(PrincessLeia) ∧ Loves(PrincessLeia, HanSolo)
+    ^^^^^^^^^^^^^^^^^^^^^   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            (b)                        (c)
+
+
+Forward chaining:
+
+- (1) From (b) and (d) we infer Visits(PrincessLeia, ObiWanKenobi)
+- (2) From (1) and (e) we infer Wise(PrincessLeia)
+- (3) From (a) and (d) we infer Visits(HanSolo, ObiWanKenobi)
+- (4) From (3) and (e) we infer Wise(HanSolo)
+- (5) From (a), (3) and (f) we infer TeachesLightsaber(ObiWanKenobi, HanSolo)
+- (6) From (g), (5) and (a) we infer JoinsRebels(HanSolo)
+- (7) From (c), (b) and (h) we infer DeclaresLove(PrincessLeia, HanSolo)
+- (8) From (5), (7) and (2) we infer our goal: Friends(HanSolo, Chewbacca)
+
+--------------------------------------------------------------------------------
+# 4
