@@ -1,0 +1,56 @@
+Written problems
+Omer Sinan Agacan (oagacan)
+
+# 1
+
+a. ∀ a b ∈ ℤ . a + b = b + a (addition is commutative)
+   ∀ a b ∈ ℤ . a x b = b x a (multiplication is commutative)
+
+b. ∀ a b ∈ ℤ . ∃ c ∈ ℤ . a + b = c (addition is closure over ℤ)
+   ∀ a b ∈ ℤ . ∃ c ∈ ℤ . a x b = c (multiplication is closure over ℤ)
+
+c. ∀ a b c ∈ ℤ . a x (b + c) = (a x b) + (b x c)
+                   (multiplication distributes over addition)
+
+d. ∀ a b c ∈ ℤ . a x (b x c) = (a x b) x c
+                   (multiplication is associative)
+   ∀ a b c ∈ ℤ . a + (b + c) = (a + b) + c
+                   (addition is associative)
+
+e. ∀ a ∈ ℤ . ∃ b ∈ ℤ . a + b = a (addition has an identity)
+   ∀ a ∈ ℤ . ∃ b ∈ ℤ . a * b = a (multiplication has an identity)
+
+   We can also express a stronger variant, saying that identity is actually a
+   fixed integer.
+
+   ∀ a ∈ ℤ . a + 0 = a (addition has an identity, it's 0)
+   ∀ a ∈ ℤ . a * 1 = a (multiplication has an identity, it's 1)
+
+# 2
+
+The entailment doesn't hold. We give two arguments,
+
+1. Intuitively, "for an x, either P(x) or Q(x) holds" is not the same thing as
+   "P(x) holds for all x or Q(x) holds for all x". Of course this is not a
+   proof, because mapping logic formulae to a spoken language usually doesn't
+   work well. Hence we have (2)
+
+2. Suppose we have two x: x1 and x2, and
+
+    P(x1) holds        but P(x2) doesn't hold.
+    Q(x1) doesn't hold but Q(x2) holds.
+
+    And further suppose that X = {x1, x2}.
+
+    In this universe(model), ∀x(P(x) ∨ Q(x)) holds, because for x1 P(x) holds
+    and for x2 Q(x) holds.
+
+    But ∀x P(x) doesn't hold and ∀x Q(x) doesn't hold. Because P(x2) doesn't
+    hold and Q(x1) doesn't hold.
+
+    Since those don't hold, their OR doesn't hold either:
+    (∀x P(x)) ∨ (∀x Q(x))
+
+# 3
+
+
