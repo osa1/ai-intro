@@ -145,3 +145,59 @@ Forward chaining:
 
 --------------------------------------------------------------------------------
 # 4
+
+For resolution we need CNF terms.
+
+First, here are our axioms:
+
+(a) ( AbleToPreventEvil(Zeus) ∧ WillingToPreventEvil(Zeus) ) => PreventsEvil(Zeus)
+(b) - AbleToPreventEvil(Zeus) => Impotent(Zeus)
+(c) - WillingToPreventEvil(Zeus) => Malevolent(Zeus)
+(d) - PreventsEvil(Zeus)
+(e) Exists(Zeus) => - Impotent(Zeus) ∧ - Malevolent(Zeus)
+
+Goal: - Exists(Zeus)
+
+We first transform axioms to CNF form:
+
+(a) - ( AbleToPreventEvil(Zeus) ∧ WillingToPreventEvil(Zeus) ) ∨ PreventsEvil(Zeus)
+    distribute negation and associativity of 'or':
+    -AbleToPreventEvil(Zeus) ∨ -WillingToPreventEvil(Zeus) ∨ PreventsEvil(Zeus)
+
+(b) AbleToPreventEvil(Zeus) ∨ Impotent(Zeus)
+
+(c) WillingToPreventEvil(Zeus) ∨ Malevolent(Zeus)
+
+(d) -PreventEvil(Zeus)
+
+(e) -Exists(Zeus) ∨ ( - Impotent(Zeus) ∧ - Malevolent(Zeus) )
+    distribute 'or' over 'and':
+    ( -Exists(Zeus) ∨ -Impotent(Zeus) ) ∧ ( -Exists(Zeus) ∨ -Malevolent(Zeus) )
+
+To be able to refer first and secod term of (e), let's split it into two terms:
+
+(e1)  -Exists(Zeus) ∨ -Impotent(Zeus)
+(e2)  -Exists(Zeus) ∨ -Malevolent(Zeus)
+
+Now we have terms in CNF, we apply resolution.
+
+(1) From (a) and (b) we infer
+    -WillingToPreventEvil(Zeus) ∨ PreventsEvil(Zeus) ∨ Impotent(Zeus)
+
+(2) From (1) and (c) we infer
+    PreventsEvil(Zeus) ∨ Impotent(Zeus) ∨ Malevolent(Zeus)
+
+(3) From (2) and (d) we infer
+    Impotent(Zeus) ∨ Malevolent(Zeus)
+
+(4) From (3) and (e2) we infer
+    -Exists(Zeus) ∨ Impotent(Zeus)
+
+(5) From (4) and (e1) we infer
+    -Exists(Zeus)
+
+Which was our goal.
+
+NOTE: IIRC in the class we added negation of the goal as an axiom and derive a
+contradiction -- I don't see the point so I do it this way, I start with axioms
+and using resolution reach to the goal.
