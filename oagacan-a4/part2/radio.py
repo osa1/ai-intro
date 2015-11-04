@@ -13,6 +13,15 @@ import re
 # Why? Because we have 50 states. A depth-first search would go as deep as 50
 # call frames, which is perfectly fine. No risk of stack overflow.
 #
+# NOTE [Profiling]
+# ~~~~~~~~~~~~~~~~
+#
+# Here I list time needed to solve constraints-4.
+#
+# Commit    Time
+# -----------------
+# 965065d   2.60s
+#
 ################################################################################
 
 FREQ_A    = 'A'
@@ -26,6 +35,7 @@ class City:
         self.name = name
         self.neighbors = set()
         self.fixed_freq = fixed_freq
+        self.hash = hash(name)
 
     def add_neighbor(self, n):
         assert isinstance(n, City)
@@ -60,7 +70,7 @@ class City:
         return self.name != other.name
 
     def __hash__(self):
-        return hash(self.name)
+        return self.hash
 
 # TODO: We may end up having more than one graph, make sure the implementation
 # handles this case.
@@ -198,8 +208,8 @@ def read_graph():
 ################################################################################
 # Entry point
 
-if __name__ == "__main__":
-    constraints_file = sys.argv[1]
+def run(*argv):
+    constraints_file = argv[0]
     constraints = read_constraints(constraints_file)
     cities = read_graph()
     graph = generate_graphs(cities, constraints)
@@ -216,3 +226,6 @@ if __name__ == "__main__":
 
     for k, v in ret.iteritems():
         print k.name + ":\t" + v
+
+if __name__ == "__main__":
+    run(*sys.argv[1:])
