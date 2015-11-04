@@ -34,42 +34,28 @@ class City:
     def __init__(self, name, fixed_freq=None):
         self.name = name
         self.neighbors = set()
-
-        if fixed_freq != None:
-            self.current_freq = fixed_freq
-            self.fixed_freq = True
-        else:
-            self.current_freq = None
-            self.fixed_freq = False
-
-        # We haven't tried any assignments so far. This will be check when we
-        # backtrack
-        self.tried = set()
+        self.fixed_freq = fixed_freq
 
     def add_neighbor(self, n):
         return self.neighbors.add(n)
 
-    def try_next(self):
-        if self.fixed_freq:
-            # Just backtrack further, can't assign a different frequency to this
-            # city
-            return None
+    def __str__(self):
+        if self.fixed_freq == None:
+            fixed_freq_str = "Nope"
+        else:
+            fixed_freq_str = "Yes: " + str(self.fixed_freq)
 
-        potential_freqs = set(ALL_FREQS)
-        for n in self.neighbors:
-            if n.current_freq != None:
-                potential_freqs.discard(n.current_freq)
+        return "<City " + self.name + \
+                " len(neighbors): " + str(len(self.neighbors)) + \
+                " fixed_freq: " + fixed_freq_str + \
+                ">"
 
-        potential_freqs = list(potential_freqs.difference(self.tried))
-        for f in potential_freqs:
-            self.tried.add(f)
-            return f
+    def __repr__(self):
+        return str(self)
 
-        self.tried = set()
-
-        # This means we need to backtrack further. Since we will consider this
-        # city in a different configuration, we also reset the self.tried.
-        return None
+    ############################################################################
+    # Essentially we treat every city as a singleton. This is probably not a
+    # good practice but works fine for this assignment.
 
     def __eq__(self, other):
         return self.name == other.name
@@ -80,17 +66,44 @@ class City:
     def __hash__(self):
         return hash(self.name)
 
-    def __str__(self):
-        return "<City " + self.name + " len(neighbors): " + str(len(self.neighbors)) + ">"
-
-    def __repr__(self):
-        return str(self)
-
 # TODO: We may end up having more than one graph, make sure the implementation
 # handles this case.
 
-def search(cities):
-    pass
+def search(assignments, all_cities):
+    if not valid_assignment(assignments):
+        # I'm not sure if this can happen, because we only do valid assignments.
+        # (i.e. generate_valid_assignments() should only generate _valid_
+        # assignments, in which case this should not happen)
+        # TODO: Removing this should be fine if the algorithm is correct.
+        return None
+
+    for city in all_cities:
+        if city not in assignments:
+            asgns = generate_valid_assignments(assignments, city)
+            if len(asgns) == 0:
+                # We have a unassigned city, and we can't assign too! This is an
+                # invalid state.
+                return None
+
+            # We have to assign something in this loop.
+            ret = None
+            for asgn in asgns:
+                # We're going to try all the alternatives
+                new_assignments = assignments.copy()
+                new_assignments[city] = asgn
+                ret = search(new_assignments, all_cities)
+                if ret:
+                    # There may be other solutions, but no need to search
+                    # further.
+                    break
+
+            return ret
+
+    # All the cities were assigned. First condition already checked that the
+    # assginments were valid. (TODO: Hm, maybe the first condition is necessary?
+    # Check this again when sober)
+    return assignments
+
 
 def generate_graphs(adjs, constraints):
     all_cities = set()
@@ -170,4 +183,6 @@ if __name__ == "__main__":
     constraints_file = sys.argv[1]
     constraints = read_constraints(constraints_file)
     cities = read_graph()
-    generate_graphs(cities, constraints)
+    graph = generate_graphs(cities, constraints)
+    ret = search({}, graph)
+    print ret
