@@ -22,6 +22,12 @@ import re
 #
 # TODO
 #
+# NOTE [Recursive implementation is fine]
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# Why? Because we have 50 states. A depth-first search would go as deep as 50
+# call frames, which is perfectly fine. No risk of stack overflow.
+#
 ################################################################################
 
 FREQ_A    = 'A'
@@ -37,6 +43,7 @@ class City:
         self.fixed_freq = fixed_freq
 
     def add_neighbor(self, n):
+        assert isinstance(n, City)
         return self.neighbors.add(n)
 
     def __str__(self):
@@ -58,9 +65,13 @@ class City:
     # good practice but works fine for this assignment.
 
     def __eq__(self, other):
+        # assert isinstance(other, City)
+        if not isinstance(other, City):
+            print "other is not City: " + str(type(other))
         return self.name == other.name
 
     def __neq__(self, other):
+        assert isinstance(other, City)
         return self.name != other.name
 
     def __hash__(self):
@@ -70,19 +81,22 @@ class City:
 # handles this case.
 
 def search(assignments, all_cities):
+    # print "Current assignments:", assignments
     if not valid_assignment(assignments):
         # I'm not sure if this can happen, because we only do valid assignments.
         # (i.e. generate_valid_assignments() should only generate _valid_
         # assignments, in which case this should not happen)
         # TODO: Removing this should be fine if the algorithm is correct.
+        # print "Not valid, returning."
         return None
 
     for city in all_cities:
-        if city not in assignments:
+        if city not in assignments and not city.fixed_freq:
             asgns = generate_valid_assignments(assignments, city)
             if len(asgns) == 0:
                 # We have a unassigned city, and we can't assign too! This is an
                 # invalid state.
+                # print "Can't do any more assignments. Need to assign " + str(city) + "."
                 return None
 
             # We have to assign something in this loop.
@@ -95,6 +109,7 @@ def search(assignments, all_cities):
                 if ret:
                     # There may be other solutions, but no need to search
                     # further.
+                    # print "New assignment."
                     break
 
             return ret
@@ -104,6 +119,21 @@ def search(assignments, all_cities):
     # Check this again when sober)
     return assignments
 
+def valid_assignment(assignments):
+    for city, assignment in assignments.iteritems():
+        for n in city.neighbors:
+            if assignment == assignments.get(n):
+                return False
+
+    return True
+
+def generate_valid_assignments(assignments, city):
+    ret = set(ALL_FREQS)
+    for n in city.neighbors:
+        # print "neighbor: " + str(n)
+        # print "type of neighbor: " + str(type(n))
+        ret.discard(assignments.get(n))
+    return ret
 
 def generate_graphs(adjs, constraints):
     all_cities = set()
@@ -124,7 +154,7 @@ def generate_graphs(adjs, constraints):
         city_obj = city_objs[city]
         for n in neighbors:
             neighbor_obj = city_objs[n]
-            city_obj.add_neighbor(n)
+            city_obj.add_neighbor(neighbor_obj)
 
     # print "len(all_cities):", len(all_cities)
     # print "all_cities:", all_cities
@@ -149,6 +179,10 @@ def read_constraints(constraints_file_path):
     return constraints
 
 def read_graph():
+    """
+    Read "adjacent-states" file and return a list of
+    (city_name, list_of_neighbors) pairs.
+    """
     graph = {}
 
     files = ["adjacent-states", "../adjacent-states"]
@@ -184,5 +218,16 @@ if __name__ == "__main__":
     constraints = read_constraints(constraints_file)
     cities = read_graph()
     graph = generate_graphs(cities, constraints)
+    # print "graph:", graph
     ret = search({}, graph)
-    print ret
+
+    # Some sanity checking
+    # Every city with non-fixed frequency should be assigned
+    assert len(ret) == len(cities) - len(constraints)
+    for c in ret.iterkeys():
+        assert not c.fixed_freq
+
+    assert valid_assignment(ret)
+
+    for k, v in ret.iteritems():
+        print k.name + ":\t" + v
