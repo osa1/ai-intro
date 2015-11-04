@@ -5,21 +5,6 @@ import re
 # NOTE [Our solution]
 # ~~~~~~~~~~~~~~~~~~~
 #
-# Very simple search using backtracking. Here's how it works.
-#
-# For a given node, we look at it's neighbors and make a list of frequencies
-# that we can use for this node. If none of the frequencies are available, then
-# we need to backtrack. If we can't backtrack, than this configuration doesn't
-# have solution.
-#
-# To backtrack, we pop from the backtrack list. A backtrack list is a list of
-# (move_to_revert, alternatives_to_try) pairs. We revert the move, and then try
-# other alternatives. If 'alternatives_to_try' is an empty list, then we keep
-# backtracking until we find a point with alternatives to try.
-#
-# NOTE [Data representation]
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~
-#
 # TODO
 #
 # NOTE [Recursive implementation is fine]
