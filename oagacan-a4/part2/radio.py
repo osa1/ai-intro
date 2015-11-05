@@ -32,6 +32,13 @@ import re
 # forever. After this optimization we solve unconstrained case in 0.023s.
 # (note that Python startup takes 0.010s)
 #
+# NOTE [Backtracks]
+# ~~~~~~~~~~~~~~~~~
+#
+# With the optimizations described above, we don't do any backtracking. For
+# testing, we can comment out `graph.sort(...)` line which disables the
+# optimization and we do thousands of backtracks.
+#
 # NOTE [Future improvements]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -115,14 +122,18 @@ class City:
     def __hash__(self):
         return self.hash
 
+backtracks = 0
+
 def search(assignments, all_cities):
+    global backtracks
+
     for city in all_cities:
         if city not in assignments and not city.fixed_freq:
             asgns = generate_valid_assignments(assignments, city)
             if len(asgns) == 0:
                 # We have a unassigned city, and we can't assign too! This is an
                 # invalid state.
-                # print "Can't do any more assignments. Need to assign " + str(city) + "."
+                print "Can't do any more assignments. Need to assign " + str(city) + "."
                 return None
 
             # We have to assign something in this loop.
@@ -137,6 +148,8 @@ def search(assignments, all_cities):
                     # further.
                     # print "New assignment."
                     break
+                else:
+                    backtracks += 1
 
             return ret
 
@@ -240,6 +253,9 @@ def read_graph():
 def compare_ns(c1, c2):
     return cmp(len(c1.neighbors), len(c2.neighbors))
 
+def compare_asgn_names(c1, c2):
+    return cmp(c1[0].name, c2[0].name)
+
 def run(*argv):
     constraints_file = argv[0]
     constraints = read_constraints(constraints_file)
@@ -257,10 +273,27 @@ def run(*argv):
 
     assert valid_assignment(ret)
 
+    # Add fixed freqs to ret before printing
+    for city in graph:
+        if city.fixed_freq:
+            ret[city] = city.fixed_freq
+
+    assert len(ret) == len(cities)
+
     ############################################################################
 
-    for k, v in ret.iteritems():
-        print k.name + ":\t" + v
+    ret_lst = list(ret.iteritems())
+    ret_lst.sort(compare_asgn_names)
+
+    f = open("results.txt", "w")
+
+    for k, v in ret_lst:
+        # print k.name + ":\t" + v
+        f.write(k.name + ":\t" + v + "\n")
+
+    # print "Number of backtracks:", backtracks
+    f.write("Number of backtracks: " + str(backtracks) + "\n")
+    f.close()
 
 if __name__ == "__main__":
     run(*sys.argv[1:])
