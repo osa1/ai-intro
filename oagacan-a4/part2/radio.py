@@ -77,15 +77,6 @@ class City:
 # handles this case.
 
 def search(assignments, all_cities):
-    # print "Current assignments:", assignments
-    if not valid_assignment(assignments):
-        # I'm not sure if this can happen, because we only do valid assignments.
-        # (i.e. generate_valid_assignments() should only generate _valid_
-        # assignments, in which case this should not happen)
-        # TODO: Removing this should be fine if the algorithm is correct.
-        # print "Not valid, returning."
-        return None
-
     for city in all_cities:
         if city not in assignments and not city.fixed_freq:
             asgns = generate_valid_assignments(assignments, city)
@@ -110,9 +101,7 @@ def search(assignments, all_cities):
 
             return ret
 
-    # All the cities were assigned. First condition already checked that the
-    # assginments were valid. (TODO: Hm, maybe the first condition is necessary?
-    # Check this again when sober)
+    # All the cities were assigned.
     return assignments
 
 def valid_assignment(assignments):
