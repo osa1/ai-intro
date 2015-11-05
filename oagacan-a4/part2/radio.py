@@ -5,7 +5,42 @@ import re
 # NOTE [Our solution]
 # ~~~~~~~~~~~~~~~~~~~
 #
-# TODO
+# This is really the most naive solution + a very simple optimization that gives
+# us huge boost. In fact, this is currently so fast that it solves the problem
+# without any constraints in 0.013s.
+#
+# Here's how it works, without the main optimization: It just recursively
+# searches, starting from first unassigned city. After every assignment we copy
+# the whole state(which is just a map from cities to assignments). We do some
+# simple optimizations for fast assignment lookup(like memoizing hash() of
+# cities).
+#
+# Copying is super fast so it's not worth optimizing(run profile.py to
+# generate profiling data).
+#
+# We do constraint propagation: When assigning a frequency during the search, we
+# check assigned neighbors. If a neighbor uses frequence A for example, we don't
+# try A at all.
+#
+# This version solves the problems with some constraints in a couple of seconds
+# but unconstrained case takes forever. However, we do one very simple
+# optimization that gives us _huge_ boost. We start assigning frequencies with
+# the state that constraints others the most. E.g. we start with state with most
+# number of neighbors.
+#
+# This really solves the whole thing. Previously unconstrained case was taking
+# forever. After this optimization we solve unconstrained case in 0.023s.
+# (note that Python startup takes 0.010s)
+#
+# NOTE [Future improvements]
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# There's one more improvement we could do. When we have more than one state
+# with same number of neighbors, we could first assign the one with least number
+# of possible alternative frequencies.
+#
+# But current solution already solves the worst case in 0.13s(excluding Python
+# startup). So there's really no need for any further optimizations.
 #
 # NOTE [Recursive implementation is fine]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -13,10 +48,15 @@ import re
 # Why? Because we have 50 states. A depth-first search would go as deep as 50
 # call frames, which is perfectly fine. No risk of stack overflow.
 #
+# Note that Python's default stack size is 1000 on most systems. So our
+# implementation handles problems up to 1000 states without any stack overflows.
+# Since problem statement doesn't specify anything about number of states, we
+# don't bother maintaining a stack.
+#
 # NOTE [Profiling]
 # ~~~~~~~~~~~~~~~~
 #
-# Here I list time needed to solve constraints-4.
+# Here I list times needed to solve constraints-4.
 #
 # Commit    Time
 # -----------------
@@ -69,14 +109,11 @@ class City:
         return self.name == other.name
 
     def __neq__(self, other):
-        assert isinstance(other, City)
+        # assert isinstance(other, City)
         return self.name != other.name
 
     def __hash__(self):
         return self.hash
-
-# TODO: We may end up having more than one graph, make sure the implementation
-# handles this case.
 
 def search(assignments, all_cities):
     for city in all_cities:
@@ -211,13 +248,16 @@ def run(*argv):
     graph.sort(cmp=compare_ns, reverse=True)
     ret = search({}, graph)
 
-    # Some sanity checking
-    # Every city with non-fixed frequency should be assigned
+    ############################################################################
+    # Making sure the output is correct
+
     assert len(ret) == len(cities) - len(constraints)
     for c in ret.iterkeys():
         assert not c.fixed_freq
 
     assert valid_assignment(ret)
+
+    ############################################################################
 
     for k, v in ret.iteritems():
         print k.name + ":\t" + v
