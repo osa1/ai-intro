@@ -199,12 +199,15 @@ def read_graph():
 ################################################################################
 # Entry point
 
+def compare_ns(c1, c2):
+    return cmp(len(c1.neighbors), len(c2.neighbors))
+
 def run(*argv):
     constraints_file = argv[0]
     constraints = read_constraints(constraints_file)
     cities = read_graph()
-    graph = generate_graphs(cities, constraints)
-    # print "graph:", graph
+    graph = list(generate_graphs(cities, constraints))
+    graph.sort(cmp=compare_ns, reverse=True)
     ret = search({}, graph)
 
     # Some sanity checking
