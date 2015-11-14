@@ -2,7 +2,7 @@
 # CS B551 Fall 2015, Assignment #5
 # D. Crandall
 #
-# There should be no need to modify this file, although you 
+# There should be no need to modify this file, although you
 # can if you really want. Edit pos_solver.py instead!
 #
 
