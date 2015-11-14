@@ -17,8 +17,13 @@ import random
 class Solver:
 
     def __init__(self):
+        # P(S0)
         self.__first_tags = None
+
+        # P(S_{t+1} | S_t)
         self.__next_tags  = None
+
+        # P(W_t | S_t)
         self.__tag_words  = None
 
     def posterior(self, sentence, label):
