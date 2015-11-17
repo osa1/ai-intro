@@ -26,6 +26,8 @@ class Solver:
         # P(W_t | S_t)
         self.__tag_words  = None
 
+        self__all_tags    = None
+
     def posterior(self, sentence, label):
         """
         Calculate the log of the posterior probability of a given sentence with
@@ -54,6 +56,7 @@ class Solver:
         self.__first_tags = self.__calculate_first_tags(data)
         self.__next_tags  = self.__calculate_next_tags(data)
         self.__tag_words  = self.__calculate_tag_words(data)
+        self.__all_tags   = self.__tag_words.keys()
 
         # print "self.__first_tags:", self.__first_tags
         # print "self.__next_tags:", self.__next_tags
@@ -65,7 +68,7 @@ class Solver:
         appears = {}
         total_tags = 0
         for (_, tags) in data:
-            tag  = tags[0]
+            tag = tags[0]
             appears[tag] = appears.get(tag, 0) + 1
             total_tags += 1
 
@@ -158,7 +161,82 @@ class Solver:
     # Functions for each algorithm.
     #
     def naive(self, sentence):
-        return [ [ [ "noun" ] * len(sentence) ], [] ]
+        # List of P(S_i)s. ith index means P(S_{i+1}). (note that we already
+        # know P(S0), it's recorded in 'self.__first_tags')
+        #
+        # This is essentially an implementation of variable elimination for
+        # reducing figure 1A to 1B.
+
+        # print "Running naive inference. All tags:", self.__all_tags
+        # print "Next_tags:", self.__next_tags
+
+        # NOTE: We can memoize p_Si_lst up to some i, say, 50, and the use it
+        # without re-generating the whole thing from scratch here. Performance
+        # is not important in this assignment, so I'll just use this.
+
+        p_Si_lst = []
+
+        for i in xrange(1, len(sentence)):
+            # The calculation we do:
+            # P(S_i) = P(S_{i} | S_{i-1}) . P(S{i-1})
+
+            # p_prev = P(S_{i-1})
+            p_prev = None
+            if i == 1:
+                p_prev = self.__first_tags
+            else:
+                p_prev = p_Si_lst[i - 2]
+
+            p_Si = {}
+            alpha = 0.0
+            for current_tag in self.__all_tags:
+                p_Si[current_tag] = 0.0
+                for prev_tag in self.__all_tags:
+                    p_prev_tag = p_prev[prev_tag]
+                    p_current_tag = p_prev_tag * self.__next_tags[prev_tag].get(current_tag, 0.0)
+                    alpha += p_current_tag
+                    p_Si[current_tag] += p_current_tag
+
+            # Normalize p_Si
+            for k, v in p_Si.iteritems():
+                p_Si[k] = v / alpha
+
+            # Record p_Si
+            p_Si_lst.append(p_Si)
+
+        ################################################
+        # Debugging, make sure probabilities add up to 1
+        for p_Si in p_Si_lst:
+            # print "p_Si:", p_Si
+            total = 0.0
+            for p in p_Si.values():
+                total += p
+            # print "total:", total
+            assert round(total) == 1
+        ################################################
+
+        # print "Naive inference done, results:", p_Si_lst
+
+        tags = []
+        for (word_idx, word) in enumerate(sentence):
+            # Which tag makes P(S_i, W) maximum?
+            max_tag = None
+            max_word_prob = -1
+
+            if word_idx == 0:
+                p_Si = self.__first_tags
+            else:
+                p_Si = p_Si_lst[word_idx - 1]
+
+            for tag in self.__all_tags:
+                p_word = p_Si[tag] * self.__tag_words[tag].get(word, 0)
+                if p_word > max_word_prob:
+                    max_word_prob = p_word
+                    max_tag = tag
+
+            tags.append(max_tag)
+
+        return [ [ tags ], [] ]
 
     def mcmc(self, sentence, sample_count):
         return [ [ [ "noun" ] * len(sentence) ] * sample_count, [] ]
