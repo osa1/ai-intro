@@ -158,24 +158,17 @@ class Solver:
 
         return tag_words
 
-    # Functions for each algorithm.
-    #
     def naive(self, sentence):
         # List of P(S_i)s. ith index means P(S_{i+1}). (note that we already
         # know P(S0), it's recorded in 'self.__first_tags')
-        #
-        # This is essentially an implementation of variable elimination for
-        # reducing figure 1A to 1B.
-
-        # print "Running naive inference. All tags:", self.__all_tags
-        # print "Next_tags:", self.__next_tags
+        p_Si_lst = []
 
         # NOTE: We can memoize p_Si_lst up to some i, say, 50, and the use it
         # without re-generating the whole thing from scratch here. Performance
         # is not important in this assignment, so I'll just use this.
 
-        p_Si_lst = []
-
+        # This is essentially an implementation of variable elimination for
+        # reducing figure 1A to 1B.
         for i in xrange(1, len(sentence)):
             # The calculation we do:
             # P(S_i) = P(S_{i} | S_{i-1}) . P(S{i-1})
@@ -201,7 +194,7 @@ class Solver:
             for k, v in p_Si.iteritems():
                 p_Si[k] = v / alpha
 
-            # Record p_Si
+            # Record p_Si before moving to p_S{i+1}
             p_Si_lst.append(p_Si)
 
         ################################################
@@ -217,6 +210,7 @@ class Solver:
 
         # print "Naive inference done, results:", p_Si_lst
 
+        # Do the actual tagging, using the inferred P(S_i | W_i)s.
         tags = []
         for (word_idx, word) in enumerate(sentence):
             # Which tag makes P(S_i, W) maximum?
