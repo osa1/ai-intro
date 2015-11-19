@@ -26,6 +26,16 @@ class Solver:
         # P(W_t | S_t)
         self.__tag_words  = None
 
+        # Using first_tags and next_tags, we can calculate marginal probability
+        # for S_n. Since we don't know the upper bound of Ns we will need, we
+        # calcualte these on demand and memoize here as an optimizations.
+        #
+        # Initiall None to avoid errors. We should initialize this with a
+        # singleton list of [self.__first_tags] when we calculate
+        # self.__first_tags.
+        self.__tag_n      = None
+
+        # A list of all tags
         self__all_tags    = None
 
     def posterior(self, sentence, label):
@@ -54,6 +64,8 @@ class Solver:
         # We do this the simplest way and do 3 passes on the data, each one
         # generating one of these.
         self.__first_tags = self.__calculate_first_tags(data)
+        self.__tag_n      = [self.__first_tags]
+
         self.__next_tags  = self.__calculate_next_tags(data)
         self.__tag_words  = self.__calculate_tag_words(data)
         self.__all_tags   = self.__tag_words.keys()
@@ -61,6 +73,21 @@ class Solver:
         # print "self.__first_tags:", self.__first_tags
         # print "self.__next_tags:", self.__next_tags
         # print "self.__tag_words:", self.__tag_words
+
+        # print "Calculating marginal probabilities for first 10 tags."
+        for i in xrange(10):
+            self.__calculate_tag_n(i)
+
+        for i in xrange(10):
+            # print "P(S_%d) = " % i
+            marginal_p = self.__calculate_tag_n(i)
+            # print marginal_p
+
+            # Make sure the probabilities are normalized
+            total = 0.0
+            for v in marginal_p.itervalues():
+                total += v
+            assert round(total) == 1
 
     def __calculate_first_tags(self, data):
         # Note the tag of first word of every sentence. Then normalize the
@@ -157,6 +184,43 @@ class Solver:
         ################################################
 
         return tag_words
+
+    def __calculate_tag_n(self, n):
+        """
+        Calculate marginal probability of P(S_n). This function mamoizes it's
+        results.
+
+        (NOTE: First word is n=0, not n=1)
+        """
+        if len(self.__tag_n) > n:
+            return self.__tag_n[n]
+
+        p_N_prev = self.__calculate_tag_n(n-1)
+        p_N      = {}
+
+        for current_tag in self.__all_tags:
+            p_current_tag = 0.0
+            for prev_tag in self.__all_tags:
+                p_prev_tag    = p_N_prev.get(prev_tag, 0.0)
+                # Current tag given prev tag
+                p_current_tag += p_prev_tag * self.__next_tags[prev_tag].get(current_tag, 0.0)
+
+            p_N[current_tag] = p_current_tag
+
+        # Normalize p_N
+        total = 0.0
+        for v in p_N.itervalues():
+            total += v
+
+        alpha = 1.0 / total
+        for k, v in p_N.iteritems():
+            p_N[k] = v * alpha
+
+        # Memoize the result
+        assert len(self.__tag_n) == n
+        self.__tag_n.append(p_N)
+
+        return p_N
 
     def naive(self, sentence):
         # List of P(S_i)s. ith index means P(S_{i+1}). (note that we already
