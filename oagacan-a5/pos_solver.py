@@ -364,8 +364,6 @@ class Solver:
 
         # print "Initial sample:", S_inits
 
-        # TODO: There's a bug somewhere, we can't iterate too much because of
-        # some 0 probability somewhere.
         for i in xrange(1000):
             # print "Iteration:", i+1
             sample = self.__mcmc(sentence, S_inits)
