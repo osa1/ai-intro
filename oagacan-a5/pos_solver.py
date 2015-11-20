@@ -315,11 +315,11 @@ class Solver:
             if word_pos != n_words - 1:
                 next_tag = sample[word_pos + 1]
                 for current_tag, current_tag_p in ps.iteritems():
-                    ps[current_tag] = current_tag_p * self.__next_tags[current_tag].get(next_tag)
+                    ps[current_tag] = current_tag_p * self.__next_tags[current_tag].get(next_tag, 0.0)
 
             # P(W_n | S_n)
             for current_tag, current_tag_p in ps.iteritems():
-                ps[current_tag] = current_tag_p * self.__tag_words[current_tag].get(word, 0)
+                ps[current_tag] = current_tag_p * self.__tag_words[current_tag].get(word, 0.0)
 
             # Finally, actually do the sampling. First, let's normalize the
             # probabilities just for convenience.
@@ -364,9 +364,10 @@ class Solver:
 
         # print "Initial sample:", S_inits
 
+        sample = S_inits
         for i in xrange(1000):
             # print "Iteration:", i+1
-            sample = self.__mcmc(sentence, S_inits)
+            sample = self.__mcmc(sentence, sample)
 
         # Collect 'sample_count' samples.
         ret = []
