@@ -365,7 +365,7 @@ class Solver:
         # print "Initial sample:", S_inits
 
         sample = S_inits
-        for i in xrange(1000):
+        for _ in xrange(3000):
             # print "Iteration:", i+1
             sample = self.__mcmc(sentence, sample)
 
