@@ -297,6 +297,67 @@ class Solver:
         return [ [ tags ], [] ]
 
     def mcmc(self, sentence, sample_count):
+        n_words = len(sentence)
+
+        # Initial sample of unobserved variables S_0, ..., S_{n-1}
+        # We can just do a random assignment, but since we know marginal
+        # probabilities of tags I'll use them here
+        S_inits = [ max_p(self.__calculate_tag_n(i)) for i in xrange(n_words) ]
+
+        # NOTE: One interesting benchmark would be to just measure how much a
+        # good initial assignment makes difference. First, if I assign randomly
+        # here, does it make it any better or worse? Second, what's the amount
+        # of iterations that compensates for the difference?
+
+        # Now, we use the Markov blanket rule to calculate next sample. After
+        # some reductions etc. it becomes:
+        #
+        # P(S_n) = normalized( P(S_n | S_{n-1}) P(S_{n+1} | S_n) P(W_n | S_n) )
+
+        sample = S_inits[:]
+        print "Initial sample:", sample
+
+        # Warm-up period.
+        for _ in xrange(100):
+            for word_pos, word in enumerate(sentence):
+                # Initialize with P(S_n | S_{n-1})
+                if word_pos != 0:
+                    ps = self.__next_tags[sample[word_pos - 1]].copy()
+                else:
+                    ps = { tag: 1 for tag in self.__all_tags }
+
+                # P(S{n+1} | S_n)
+                if word_pos != n_words:
+                    next_tag = sample[word_pos + 1]
+                    for current_tag, current_tag_p in ps.iteritems():
+                        ps[current_tag] = current_tag_p * self.__next_tags[current_tag][next_tag]
+
+                # P(W_n | S_n)
+                for current_tag, current_tag_p in ps.iteritems():
+                    ps[current_tag] = current_tag_p * self.__tag_words[current_tag].get(word, 0)
+
+                # Finally, actually do the sampling. First, let's normalize the
+                # probabilities just for convenience.
+                total = 0.0
+                for p in ps.itervalues():
+                    total += p
+                alpha = 1.0 / total
+
+                for tag, tag_p in ps.iteritems():
+                    ps[tag] = tag_p * alpha
+
+                # Roll a dice
+                dice = random.random()
+
+                # List of (tag, probability)
+                lst = list(ps.iteritems())
+
+                # Sample!
+                choice = weighted_choice(lst)
+                print "choice:", choice
+
+                sample[word_pos] = choice
+
         return [ [ [ "noun" ] * len(sentence) ] * sample_count, [] ]
 
     def best(self, sentence):
@@ -334,3 +395,33 @@ class Solver:
             return self.best(sentence)
         else:
             print "Unknown algo!"
+
+
+################################################################################
+# Some utilities
+
+def max_p(ps):
+    """
+    Given a dictionary of <key, probability>, return the key with largest
+    probability.
+    """
+    max   = 0
+    max_k = None
+
+    for k, v in ps.iteritems():
+        if max_k == None or max < v:
+            max_k = k
+            max   = v
+
+    return max_k
+
+# From http://stackoverflow.com/questions/3679694/a-weighted-version-of-random-choice
+def weighted_choice(choices):
+   total = sum(w for c, w in choices)
+   r = random.uniform(0, total)
+   upto = 0
+   for c, w in choices:
+      if upto + w >= r:
+         return c
+      upto += w
+   assert False, "Shouldn't get here"
