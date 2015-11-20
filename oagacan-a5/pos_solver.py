@@ -10,6 +10,7 @@
 #
 ################################################################################
 
+import collections
 import itertools
 import math
 import random
@@ -296,6 +297,17 @@ class Solver:
 
         return [ [ tags ], [] ]
 
+    def __init_sample(self, n_words):
+        """
+        First sample of tags for n_words words. The sample is generated using
+        marginal probabilities of tags.
+        """
+        # NOTE: One interesting benchmark would be to just measure how much a
+        # good initial assignment makes difference. First, if I assign randomly
+        # here, does it make it any better or worse? Second, what's the amount
+        # of iterations that compensates for the difference?
+        return [ max_p(self.__calculate_tag_n(i).iteritems()) for i in xrange(n_words) ]
+
     def __mcmc(self, sentence, sample):
         """
         Use the Markov blanket rule to calculate next sample:
@@ -353,15 +365,7 @@ class Solver:
         n_words = len(sentence)
 
         # Initial sample of unobserved variables S_0, ..., S_{n-1}
-        # We can just do a random assignment, but since we know marginal
-        # probabilities of tags I'll use them here
-        S_inits = [ max_p(self.__calculate_tag_n(i)) for i in xrange(n_words) ]
-
-        # NOTE: One interesting benchmark would be to just measure how much a
-        # good initial assignment makes difference. First, if I assign randomly
-        # here, does it make it any better or worse? Second, what's the amount
-        # of iterations that compensates for the difference?
-
+        S_inits = self.__init_sample(n_words)
         # print "Initial sample:", S_inits
 
         sample = S_inits
@@ -378,7 +382,34 @@ class Solver:
         return [ ret, [] ]
 
     def max_marginal(self, sentence):
-        return [ [ [ "noun" ] * len(sentence) ], [[0] * len(sentence),] ]
+        # In the mcmc part I figured 3k is a good number for samples. I'm using
+        # same number here.
+        n_words = len(sentence)
+        sample  = self.__init_sample(n_words)
+        samples = []
+
+        for _ in xrange(3000):
+            sample = self.__mcmc(sentence, sample[:])
+            samples.append(sample)
+
+        assert len(samples) == 3000
+
+        tags  = []
+        probs = []
+        for word_idx in xrange(n_words):
+            word_tags = [ sample[word_idx] for sample in samples ]
+            counter = collections.Counter(word_tags)
+            counter_normalized = normalize(list(counter.iteritems()))
+
+            max_tag = max_p(counter.iteritems())
+            max_tag_prob = find_lst(counter_normalized, max_tag)
+
+            tags.append(max_tag)
+            probs.append(max_tag_prob)
+
+        assert len(tags) == n_words
+
+        return [ [ tags ], [ probs ] ]
 
     def viterbi(self, sentence):
         return [ [ [ "noun" ] * len(sentence) ], [] ]
@@ -418,18 +449,46 @@ class Solver:
 
 def max_p(ps):
     """
-    Given a dictionary of <key, probability>, return the key with largest
+    Given an iterator of (key, probability), return the key with largest
     probability.
     """
     max   = 0
     max_k = None
 
-    for k, v in ps.iteritems():
+    for k, v in ps:
         if max_k == None or max < v:
             max_k = k
             max   = v
 
     return max_k
+
+def normalize(ps):
+    """
+    Given an list of (key, probability), return a list of same keys with
+    normalized probabilities.
+    """
+    # DON'T PASS ITERATORS! We need to iterate two times, in general it's not
+    # possible to reset iterators.
+    assert isinstance(ps, list)
+
+    ret = []
+    total = 0.0
+
+    for _, v in ps:
+        total += v
+
+    alpha = 1.0 / total
+
+    for k, v in ps:
+        ret.append((k, v * alpha))
+
+    return ret
+
+def find_lst(ps, key):
+    for k, v in ps:
+        if k == key:
+            return v
+    return None
 
 # From http://stackoverflow.com/questions/3679694/a-weighted-version-of-random-choice
 def weighted_choice(choices):
