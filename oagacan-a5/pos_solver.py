@@ -310,7 +310,7 @@ class Solver:
             if word_pos != n_words - 1:
                 next_tag = sample[word_pos + 1]
                 for current_tag, current_tag_p in ps.iteritems():
-                    ps[current_tag] = current_tag_p * self.__next_tags[current_tag][next_tag]
+                    ps[current_tag] = current_tag_p * self.__next_tags[current_tag].get(next_tag)
 
             # P(W_n | S_n)
             for current_tag, current_tag_p in ps.iteritems():
