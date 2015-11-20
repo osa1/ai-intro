@@ -394,6 +394,8 @@ class Solver:
 
         assert len(samples) == 3000
 
+        # We count tags on the fly, instead of generating tables of marginal
+        # probabilities etc.
         tags  = []
         probs = []
         for word_idx in xrange(n_words):
