@@ -36,7 +36,7 @@ class Solver:
         self.__tag_n      = None
 
         # A list of all tags
-        self__all_tags    = None
+        self.__all_tags   = None
 
     def posterior(self, sentence, label):
         """
