@@ -297,6 +297,11 @@ class Solver:
         return [ [ tags ], [] ]
 
     def __mcmc(self, sentence, sample):
+        """
+        Use the Markov blanket rule to calculate next sample:
+
+        P(S_n) = normalized( P(S_n | S_{n-1}) P(S_{n+1} | S_n) P(W_n | S_n) )
+        """
         n_words = len(sentence)
 
         for word_pos, word in enumerate(sentence):
@@ -357,22 +362,15 @@ class Solver:
         # here, does it make it any better or worse? Second, what's the amount
         # of iterations that compensates for the difference?
 
-        # Now, we use the Markov blanket rule to calculate next sample. After
-        # some reductions etc. it becomes:
-        #
-        # P(S_n) = normalized( P(S_n | S_{n-1}) P(S_{n+1} | S_n) P(W_n | S_n) )
-        #
-        # This part is implemented in __mcmc().
-
         # print "Initial sample:", S_inits
 
         # TODO: There's a bug somewhere, we can't iterate too much because of
         # some 0 probability somewhere.
-        for i in xrange(100):
-            print "Iteration:", i+1
+        for i in xrange(1000):
+            # print "Iteration:", i+1
             sample = self.__mcmc(sentence, S_inits)
 
-        # Collect last 'sample_count' samples.
+        # Collect 'sample_count' samples.
         ret = []
         for _ in xrange(sample_count):
             sample = self.__mcmc(sentence, sample[:])
