@@ -296,6 +296,54 @@ class Solver:
 
         return [ [ tags ], [] ]
 
+    def __mcmc(self, sentence, sample):
+        n_words = len(sentence)
+
+        for word_pos, word in enumerate(sentence):
+            # Initialize with P(S_n | S_{n-1})
+            if word_pos != 0:
+                ps = self.__next_tags[sample[word_pos - 1]].copy()
+            else:
+                ps = { tag: 1 for tag in self.__all_tags }
+
+            # P(S{n+1} | S_n)
+            if word_pos != n_words - 1:
+                next_tag = sample[word_pos + 1]
+                for current_tag, current_tag_p in ps.iteritems():
+                    ps[current_tag] = current_tag_p * self.__next_tags[current_tag][next_tag]
+
+            # P(W_n | S_n)
+            for current_tag, current_tag_p in ps.iteritems():
+                ps[current_tag] = current_tag_p * self.__tag_words[current_tag].get(word, 0)
+
+            # Finally, actually do the sampling. First, let's normalize the
+            # probabilities just for convenience.
+            total = 0.0
+            # print "ps, before normalization", ps
+            for p in ps.itervalues():
+                total += p
+
+            # TODO: Understand why is this happening
+            if total != 0:
+                alpha = 1.0 / total
+                for tag, tag_p in ps.iteritems():
+                    ps[tag] = tag_p * alpha
+
+            # Roll a dice
+            dice = random.random()
+
+            # List of (tag, probability)
+            lst = list(ps.iteritems())
+
+            # Sample!
+            choice = weighted_choice(lst)
+            # print "choice:", choice
+
+            sample[word_pos] = choice
+            # print "New sample:", sample
+
+        return sample
+
     def mcmc(self, sentence, sample_count):
         n_words = len(sentence)
 
@@ -313,52 +361,24 @@ class Solver:
         # some reductions etc. it becomes:
         #
         # P(S_n) = normalized( P(S_n | S_{n-1}) P(S_{n+1} | S_n) P(W_n | S_n) )
+        #
+        # This part is implemented in __mcmc().
 
-        sample = S_inits[:]
-        print "Initial sample:", sample
+        # print "Initial sample:", S_inits
 
-        # Warm-up period.
-        for _ in xrange(100):
-            for word_pos, word in enumerate(sentence):
-                # Initialize with P(S_n | S_{n-1})
-                if word_pos != 0:
-                    ps = self.__next_tags[sample[word_pos - 1]].copy()
-                else:
-                    ps = { tag: 1 for tag in self.__all_tags }
+        # TODO: There's a bug somewhere, we can't iterate too much because of
+        # some 0 probability somewhere.
+        for i in xrange(100):
+            print "Iteration:", i+1
+            sample = self.__mcmc(sentence, S_inits)
 
-                # P(S{n+1} | S_n)
-                if word_pos != n_words:
-                    next_tag = sample[word_pos + 1]
-                    for current_tag, current_tag_p in ps.iteritems():
-                        ps[current_tag] = current_tag_p * self.__next_tags[current_tag][next_tag]
+        # Collect last 'sample_count' samples.
+        ret = []
+        for _ in xrange(sample_count):
+            sample = self.__mcmc(sentence, sample[:])
+            ret.append(sample)
 
-                # P(W_n | S_n)
-                for current_tag, current_tag_p in ps.iteritems():
-                    ps[current_tag] = current_tag_p * self.__tag_words[current_tag].get(word, 0)
-
-                # Finally, actually do the sampling. First, let's normalize the
-                # probabilities just for convenience.
-                total = 0.0
-                for p in ps.itervalues():
-                    total += p
-                alpha = 1.0 / total
-
-                for tag, tag_p in ps.iteritems():
-                    ps[tag] = tag_p * alpha
-
-                # Roll a dice
-                dice = random.random()
-
-                # List of (tag, probability)
-                lst = list(ps.iteritems())
-
-                # Sample!
-                choice = weighted_choice(lst)
-                print "choice:", choice
-
-                sample[word_pos] = choice
-
-        return [ [ [ "noun" ] * len(sentence) ] * sample_count, [] ]
+        return [ ret, [] ]
 
     def best(self, sentence):
         return [ [ [ "noun" ] * len(sentence) ], [] ]
