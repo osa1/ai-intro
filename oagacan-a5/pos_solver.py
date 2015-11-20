@@ -28,9 +28,9 @@ class Solver:
 
         # Using first_tags and next_tags, we can calculate marginal probability
         # for S_n. Since we don't know the upper bound of Ns we will need, we
-        # calcualte these on demand and memoize here as an optimizations.
+        # calculate these on demand and memoize here as an optimizations.
         #
-        # Initiall None to avoid errors. We should initialize this with a
+        # Initially None to avoid errors. We should initialize this with a
         # singleton list of [self.__first_tags] when we calculate
         # self.__first_tags.
         self.__tag_n      = None
@@ -187,7 +187,7 @@ class Solver:
 
     def __calculate_tag_n(self, n):
         """
-        Calculate marginal probability of P(S_n). This function mamoizes it's
+        Calculate marginal probability of P(S_n). This function memoizes it's
         results.
 
         (NOTE: First word is n=0, not n=1)
