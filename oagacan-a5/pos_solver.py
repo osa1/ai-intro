@@ -377,15 +377,14 @@ class Solver:
 
         return [ ret, [] ]
 
-    def best(self, sentence):
-        return [ [ [ "noun" ] * len(sentence) ], [] ]
-
     def max_marginal(self, sentence):
         return [ [ [ "noun" ] * len(sentence) ], [[0] * len(sentence),] ]
 
     def viterbi(self, sentence):
         return [ [ [ "noun" ] * len(sentence) ], [] ]
 
+    def best(self, sentence):
+        return [ [ [ "noun" ] * len(sentence) ], [] ]
 
     # This solve() method is called by label.py, so you should keep the interface the
     #  same, but you can change the code itself.
