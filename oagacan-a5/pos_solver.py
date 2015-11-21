@@ -15,12 +15,6 @@
 #
 # Some implementation details are commented in the code.
 #
-# One thing that I could try but given how much time I spent on this assignment
-# I won't is: Currently if in the training data a word is not tagged with
-# something, I'm just giving the probability 0(instead of a very low
-# probability that is higher than 0). At this point I think my implementation
-# is good enough and I don't spend any more time with this.
-#
 # Parameters and experiments
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -53,6 +47,10 @@ import random
 
 SAMPLES = 500
 
+# This is used for giving probabilities to cases that don't happen in the
+# training data.
+VERY_UNLIKELY = 1e-15
+
 class Solver:
 
     def __init__(self):
@@ -77,12 +75,20 @@ class Solver:
         # A list of all tags
         self.__all_tags   = None
 
-    def posterior(self, sentence, label):
+    def posterior(self, sentence, tags):
         """
         Calculate the log of the posterior probability of a given sentence with
         a given part-of-speech labeling.
         """
-        return 0
+        prob = 1.0
+        for (word_idx, (word, tag)) in enumerate(itertools.izip(sentence, tags)):
+            if word_idx == 0:
+                prob *= self.__first_tags[tag] * self.__tag_words[tag].get(word, VERY_UNLIKELY)
+            else:
+                prob *= self.__next_tags[tags[word_idx - 1]].get(tag, VERY_UNLIKELY) \
+                        * self.__tag_words[tag].get(word, VERY_UNLIKELY)
+
+        return math.log(prob, 10)
 
     def train(self, data):
         """
