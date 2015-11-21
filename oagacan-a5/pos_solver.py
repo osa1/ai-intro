@@ -15,6 +15,12 @@
 #
 # Some implementation details are commented in the code.
 #
+# One thing that I could try but given how much time I spent on this assignment
+# I won't is: Currently if in the training data a word is not tagged with
+# something, I'm just giving the probability 0(instead of a very low
+# probability that is higher than 0). At this point I think my implementation
+# is good enough and I don't spend any more time with this.
+#
 # Parameters and experiments
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
