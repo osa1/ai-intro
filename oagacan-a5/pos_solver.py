@@ -7,6 +7,36 @@
 #
 ################################################################################
 # Report
+# ~~~~~~
+#
+# Well, I don't know what to say here. Algorithms are pretty much implemented
+# from their descriptions in the relevant wiki pages or online class slides and
+# work sheets.
+#
+# Some implementation details are commented in the code.
+#
+# Parameters and experiments
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# The story with number of samples for MCMC and max marginal: In my tests I
+# realized that after 500 samples the the accuracy is not effected by increase
+# in samples. (I tried up to 4000 samples)
+#
+# One interesting experiment was this: In MCMC and max marginal, I tried
+# generating initial sample using marginal probability of tags. See my comments
+# in __init_sample() method for results(Didn't make any difference).
+#
+# Results
+# ~~~~~~~
+#
+# ==> So far scored 2000 sentences with 29442 words.
+#                    Words correct:     Sentences correct:
+#    0. Ground truth:      100.00%              100.00%
+#           1. Naive:       91.72%               37.65%
+#         2. Sampler:       94.12%               47.35%
+#    3. Max marginal:       95.23%               54.45%
+#             4. MAP:       72.49%               40.45%
+#            5. Best:       95.20%               54.25%
 #
 ################################################################################
 
@@ -14,6 +44,8 @@ import collections
 import itertools
 import math
 import random
+
+SAMPLES = 500
 
 class Solver:
 
@@ -106,14 +138,6 @@ class Solver:
         for first_tag, first_tag_amt in appears.iteritems():
             appears[first_tag] = first_tag_amt * m
 
-        ################################################
-        # Debugging, make sure probabilities add up to 1
-        total = 0.0
-        for first_tag_amt in appears.itervalues():
-            total += first_tag_amt
-        assert round(total) == 1
-        ################################################
-
         return appears
 
     def __calculate_next_tags(self, data):
@@ -141,15 +165,6 @@ class Solver:
             for t, t_amt in next_tag_table.iteritems():
                 next_tag_table[t] = float(t_amt) * m
 
-        ################################################
-        # Debugging, make sure probabilities add up to 1
-        for next_tag in next_tags.itervalues():
-            total = 0.0
-            for t_amt in next_tag.itervalues():
-                total += t_amt
-            assert round(total) == 1.0
-        ################################################
-
         return next_tags
 
     def __calculate_tag_words(self, data):
@@ -174,15 +189,6 @@ class Solver:
 
             for word, word_ct in words.iteritems():
                 words[word] = word_ct * m
-
-        ################################################
-        # Debugging, make sure probabilities add up to 1
-        for tag_table in tag_words.itervalues():
-            total = 0.0
-            for word_ct in tag_table.itervalues():
-                total += word_ct
-            assert round(total) == 1
-        ################################################
 
         return tag_words
 
@@ -262,17 +268,6 @@ class Solver:
             # Record p_Si before moving to p_S{i+1}
             p_Si_lst.append(p_Si)
 
-        ################################################
-        # Debugging, make sure probabilities add up to 1
-        for p_Si in p_Si_lst:
-            # print "p_Si:", p_Si
-            total = 0.0
-            for p in p_Si.values():
-                total += p
-            # print "total:", total
-            assert round(total) == 1
-        ################################################
-
         # print "Naive inference done, results:", p_Si_lst
 
         # Do the actual tagging, using the inferred P(S_i | W_i)s.
@@ -306,6 +301,19 @@ class Solver:
         # good initial assignment makes difference. First, if I assign randomly
         # here, does it make it any better or worse? Second, what's the amount
         # of iterations that compensates for the difference?
+        #
+        # EDIT: Just tried this:
+        #
+        # return [ "noun" for _ in xrange(n_words) ]
+        #
+        # The result is, even with just 500 samples it makes no difference. A
+        # completely random or deliberately bad initial sample is perfectly
+        # fine if we sample several hundred times.
+        #
+        # I didn't test for what's the lowest amount of samples for
+        # compensating this though.
+        #
+        # Still using the old, unnecessarily fancy version here for no reason.
         return [ max_p(self.__calculate_tag_n(i).iteritems())[0] for i in xrange(n_words) ]
 
     def __mcmc(self, sentence, sample):
@@ -369,7 +377,7 @@ class Solver:
         # print "Initial sample:", S_inits
 
         sample = S_inits
-        for _ in xrange(3000):
+        for _ in xrange(SAMPLES):
             # print "Iteration:", i+1
             sample = self.__mcmc(sentence, sample)
 
@@ -388,11 +396,9 @@ class Solver:
         sample  = self.__init_sample(n_words)
         samples = []
 
-        for _ in xrange(3000):
+        for _ in xrange(SAMPLES):
             sample = self.__mcmc(sentence, sample[:])
             samples.append(sample)
-
-        assert len(samples) == 3000
 
         # We count tags on the fly, instead of generating tables of marginal
         # probabilities etc.
@@ -443,8 +449,11 @@ class Solver:
         return [ [ max_p(paths)[0] ] , [] ]
 
     def best(self, sentence):
-        # What can I say, naive works the best.
-        return self.naive(sentence)
+        # Just tried, max marginal works the best.
+        # Honestly I spent so much time with this assignment, I don't want to
+        # spend any more time with experimenting with parameters etc. I'm just
+        # using whatever is the best in what I have.
+        return self.max_marginal(sentence)
 
     # This solve() method is called by label.py, so you should keep the interface the
     #  same, but you can change the code itself.
