@@ -306,7 +306,7 @@ class Solver:
         # good initial assignment makes difference. First, if I assign randomly
         # here, does it make it any better or worse? Second, what's the amount
         # of iterations that compensates for the difference?
-        return [ max_p(self.__calculate_tag_n(i).iteritems()) for i in xrange(n_words) ]
+        return [ max_p(self.__calculate_tag_n(i).iteritems())[0] for i in xrange(n_words) ]
 
     def __mcmc(self, sentence, sample):
         """
@@ -403,7 +403,7 @@ class Solver:
             counter = collections.Counter(word_tags)
             counter_normalized = normalize(list(counter.iteritems()))
 
-            max_tag = max_p(counter.iteritems())
+            max_tag = max_p(counter.iteritems())[0]
             max_tag_prob = find_lst(counter_normalized, max_tag)
 
             tags.append(max_tag)
@@ -413,11 +413,38 @@ class Solver:
 
         return [ [ tags ], [ probs ] ]
 
+    def __viterbi(self, sentence, t):
+        observed = sentence[t]
+
+        if t == 0:
+            return [ ([tag], tag_prob * self.__tag_words[tag].get(observed, 0.0)) \
+                     for (tag, tag_prob) in self.__first_tags.iteritems() ]
+        else:
+            (prev_path, prev_path_prob) = max_p(self.__viterbi(sentence, t - 1))
+
+            ret = []
+
+            last_tag = prev_path[-1]
+
+            for next_tag in self.__all_tags:
+                next_tag_prob = \
+                        prev_path_prob * \
+                        self.__next_tags[last_tag].get(next_tag, 0.0) * \
+                        self.__tag_words[next_tag].get(observed, 0.0)
+
+                next_tag_path = prev_path[:]
+                next_tag_path.append(next_tag)
+                ret.append((next_tag_path, next_tag_prob))
+
+            return ret
+
     def viterbi(self, sentence):
-        return [ [ [ "noun" ] * len(sentence) ], [] ]
+        paths = self.__viterbi(sentence, len(sentence) - 1)
+        return [ [ max_p(paths)[0] ] , [] ]
 
     def best(self, sentence):
-        return [ [ [ "noun" ] * len(sentence) ], [] ]
+        # What can I say, naive works the best.
+        return self.naive(sentence)
 
     # This solve() method is called by label.py, so you should keep the interface the
     #  same, but you can change the code itself.
@@ -451,8 +478,8 @@ class Solver:
 
 def max_p(ps):
     """
-    Given an iterator of (key, probability), return the key with largest
-    probability.
+    Given an iterator of (key, probability),
+    returns (the key with largest probability, probability).
     """
     max   = 0
     max_k = None
@@ -462,7 +489,7 @@ def max_p(ps):
             max_k = k
             max   = v
 
-    return max_k
+    return (max_k, max)
 
 def normalize(ps):
     """
