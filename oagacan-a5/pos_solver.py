@@ -49,7 +49,7 @@ SAMPLES = 500
 
 # This is used for giving probabilities to cases that don't happen in the
 # training data.
-VERY_UNLIKELY = 1e-15
+VERY_UNLIKELY = 1e-10
 
 class Solver:
 
@@ -92,7 +92,7 @@ class Solver:
         # sometimes the number gets so small it's becomes 0 at the hardware
         # level. log 0 is undefined, but here let's just use NaN as an
         # indicator.
-        if round(prob) == 0:
+        if prob == 0.0:
             return float('nan')
 
         return math.log(prob, 10)
