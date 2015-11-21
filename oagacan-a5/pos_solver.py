@@ -88,6 +88,13 @@ class Solver:
                 prob *= self.__next_tags[tags[word_idx - 1]].get(tag, VERY_UNLIKELY) \
                         * self.__tag_words[tag].get(word, VERY_UNLIKELY)
 
+        # Even though we're not giving 0 probability to anything, I believe
+        # sometimes the number gets so small it's becomes 0 at the hardware
+        # level. log 0 is undefined, but here let's just use NaN as an
+        # indicator.
+        if round(prob) == 0:
+            return float('nan')
+
         return math.log(prob, 10)
 
     def train(self, data):
