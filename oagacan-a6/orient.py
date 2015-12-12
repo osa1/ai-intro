@@ -2,48 +2,8 @@ import itertools
 import math
 import random
 
-################################################################################
-
-class ImageData:
-    def __init__(self, name, orientation, rgbs):
-        self.name = name
-        self.orientation = orientation
-        self.rgbs = rgbs
-        self.rgbs_merged = map(lambda (r, g, b): merge_rgb(r, g, b), rgbs)
-
-    def __str__(self):
-        return "ImageData<name: " + self.name + "\n" + \
-               "          orientation: " + str(self.orientation) + "\n" + \
-               "          rgbs: " + str(self.rgbs) + ">"
-
-    def __repr__(self):
-        return self.__str__()
-
-
-def parse_img_file(file):
-    f = open(file, 'r')
-
-    ret = []
-
-    for line in f.readlines():
-        parts = line.split()
-        name = parts[0]
-        orient = int(parts[1])
-
-        assert ((len(parts) - 2) % 3 == 0)
-
-        rgbs = []
-
-        for i in xrange(2, len(parts), 3):
-            r = int(parts[i  ])
-            g = int(parts[i+1])
-            b = int(parts[i+2])
-
-            rgbs.append((r, g, b))
-
-        ret.append(ImageData(name, orient, rgbs))
-
-    return ret
+from img import *
+import neurons
 
 ################################################################################
 # K-nearest neighbor
@@ -214,13 +174,10 @@ class NeuralNet:
                % (len(self.input_layer), len(self.hidden_layer))
 
 
-def merge_rgb(r, g, b):
-    return (r << 16) + (g << 8) + b
-
 def sigmoid(z):
     """Or Logistic(z) or whatever."""
     # print "sigmoid input:", z
-    return 1.0 / (1 + math.e ** (- z))
+    return 1.0 / (1 + math.exp(- z))
 
 def sigmoid_prime(z):
     """dsigmoid / dz"""
@@ -362,12 +319,14 @@ if __name__ == "__main__":
     #     result = "(True)" if ret == test.orientation else "(False)"
     #     print "nn:", ret, result
     print "Initializing neural network."
-    net = init_net(test_data[0])
-    print net
-    print "Net output:", net.output()
-    print "Done."
+    net = neurons.NeuralNet(test_data[0])
+    # print net
+    # print "Net output:", net.output(test_data[0])
+    # print "Done."
     print "Testing training."
-    back_prop_learning(net, train_data)
     # back_prop_learning(net, train_data)
-    classify(net, test_data)
-    print "Done."
+    net.train(train_data, 10)
+    print "Done. Testing classification."
+    print net.output(test_data[0])
+    # # back_prop_learning(net, train_data)
+    # classify(net, test_data)
