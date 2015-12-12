@@ -116,6 +116,9 @@ def nn(k, train_data, img):
 ################################################################################
 # Neural net
 
+# Adding this awful global state for now.
+ALPHA = 1
+
 # I fix the threshold function for now. If time permits I can experiment with
 # some different ones.
 
@@ -123,24 +126,31 @@ class InputNeuron:
     """
     InputNeuron is just a neuron with fixed input.
     """
-    def __init__(self, inputs):
+    def __init__(self, input):
         # An input is a (value, weight) pair. Values never change, but weights
         # do as we learn. EDIT: This is not quite true, we use same net on
         # different images so the values change too. They just change in
         # different times.
-        self.__inputs = inputs
+        # self.__inputs = inputs
+        self.input = input
 
-    def set_inputs(self, new_inputs):
-        """
-        Set inputs of the neuron. Note that this doesn't change the weights.
-        """
-        assert len(new_inputs) == len(self.__inputs)
-        for (idx, (new_input, (_, old_weight))) in \
-                enumerate(itertools.zip(new_inputs, self.__inputs)):
-            self.__inputs[idx] = (new_input, old_weight)
+    # def set_inputs(self, new_inputs):
+    #     """
+    #     Set inputs of the neuron. Note that this doesn't change the weights.
+    #     """
+    #     assert len(new_inputs) == len(self.__inputs)
+    #     for (idx, (new_input, (_, old_weight))) in \
+    #             enumerate(itertools.zip(new_inputs, self.__inputs)):
+    #         self.__inputs[idx] = (new_input, old_weight)
+
+    def set_input(self, new_input):
+        self.input = (new_input, self.input[1])
 
     def output(self):
-        return sigmoid(sum([ i * w for (i, w) in self.__inputs ]))
+        print self.input
+        s = self.input[0] * self.input[1]
+        print "InputNeuron output sum:", s
+        return sigmoid(s)
 
 
 class HiddenNeuron:
@@ -154,49 +164,66 @@ class HiddenNeuron:
         # An input is a (source, weight) pair. Sources should have a output()
         # method.
         if not inputs:
-            self.__inputs = []
+            self.inputs = []
         else:
-            self.__inputs = inputs
+            self.inputs = inputs
 
     def add_input(self, input, weight):
-        self.__inputs.append((input, weight))
+        self.inputs.append((input, weight))
+
+    def input(self):
+        return sum([ i.output() * w for (i, w) in self.inputs ])
 
     def output(self):
-        return sigmoid(sum([ i.output() * w for (i, w) in self.__inputs ]))
+        s = self.input()
+        print "HiddenNeuron output sum:", s
+        return sigmoid(s)
 
 
 class NeuralNet:
     def __init__(self, input_layer, hidden_layer, output_layer):
-        self.__input_layer = input_layer
-        self.__hidden_layer = hidden_layer
-        self.__output_layer = output_layer
+        self.input_layer = input_layer
+        self.hidden_layer = hidden_layer
+        self.output_layer = output_layer
 
     def set_inputs(self, inputs):
-        assert len(inputs) == len(self.__input_layer)
-        self.__input_layer.set_inputs(inputs)
+        assert len(inputs) == len(self.input_layer)
+        self.input_layer.set_inputs(inputs)
+
+    def connect_img(self, img):
+        assert len(self.input_layer) == len(img.rgbs)
+        for (input_node, (r, g, b)) in itertools.zip(self.input_layer, img.rgbs):
+            input_node.set_input(merge_rgb(r, g, b))
 
     def output(self):
-        return self.__output_layer.output()
+        return self.output_layer.output()
 
     def __str__(self):
         return ("<NeuralNet with %d input layer neurons, " + \
                 "%d hidden layer neurons and 1 output neuron>") \
-               % (len(self.__input_layer), len(self.__hidden_layer))
+               % (len(self.input_layer), len(self.hidden_layer))
 
+
+def merge_rgb(r, g, b):
+    return (r << 16) + (g << 8) + b
 
 def sigmoid(z):
     """Or Logistic(z) or whatever."""
+    print "sigmoid input:", z
     return 1.0 / (1 + math.e ** (- z))
+
+def sigmoid_prime(z):
+    """dsigmoid / dz"""
+    s = sigmoid(z)
+    return s * (1 - s)
 
 def init_net(test_img):
     # Initialize input layer
     input_nodes = []
 
     for (r, g, b) in test_img.rgbs:
-        w1 = init_weight()
-        w2 = init_weight()
-        w3 = init_weight()
-        input_nodes.append(InputNeuron([ (r, w1), (g, w2), (b, w3) ]))
+        w = init_weight()
+        input_nodes.append(InputNeuron((merge_rgb(r, g, b), w)))
 
     hidden_nodes = []
 
@@ -216,7 +243,35 @@ def init_net(test_img):
 
 def init_weight():
     # Don't ask why
-    return random.random() * 8 - 4
+    # return random.random() * 8 - 4
+    return random.random() - 0.5
+
+def back_prop_learning(net, training_set):
+    for img in training_set:
+        net.set_inputs(img)
+
+        output = net.output()
+        print "net output:", output
+        expected_output = img.orientation
+
+        # One output -> one delta
+        delta = sigmoid_prime(net.output_layer.input()) * \
+                expected_output - output
+
+        # (node, weight) pairs
+        # TODO: I should probably refactor classes to make edges double-way, but
+        # this will do for now.
+        hidden_layer_nodes = output.inputs
+
+        # Propagate delta to hidden layer
+        hidden_layer_deltas = []
+        for (hidden_node, w) in hidden_layer_nodes:
+            hidden_layer_deltas.append(
+                    sigmoid_prime(hidden_node.input()) * weight * delta)
+
+        # Update every weight in network using deltas
+        pass
+
 
 
 ################################################################################
