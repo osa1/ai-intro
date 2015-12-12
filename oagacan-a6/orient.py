@@ -9,6 +9,7 @@ class ImageData:
         self.name = name
         self.orientation = orientation
         self.rgbs = rgbs
+        self.rgbs_merged = map(lambda (r, g, b): merge_rgb(r, g, b), rgbs)
 
     def __str__(self):
         return "ImageData<name: " + self.name + "\n" + \
@@ -117,7 +118,7 @@ def nn(k, train_data, img):
 # Neural net
 
 # Adding this awful global state for now.
-ALPHA = 1
+ALPHA = 0.00002
 
 # I fix the threshold function for now. If time permits I can experiment with
 # some different ones.
@@ -133,10 +134,7 @@ class InputNeuron:
         self.outputs = []
 
     def set_input(self, new_input):
-        self.input = (new_input, self.input[1])
-
-    def set_input_weight(self, new_w):
-        self.input_w = new_w
+        self.input = new_input
 
     def add_output(self, output_node, output_w):
         self.outputs.append((output_node, output_w))
@@ -185,7 +183,7 @@ class HiddenNeuron:
         """ a_j """
         return sigmoid(self.in_())
 
-    def output_prim(self):
+    def output_prime(self):
         """ a_j' """
         return sigmoid_prime(self.in_())
 
@@ -204,8 +202,8 @@ class NeuralNet:
 
     def connect_img(self, img):
         assert len(self.input_layer) == len(img.rgbs)
-        for (input_node, (r, g, b)) in itertools.zip(self.input_layer, img.rgbs):
-            input_node.set_input(merge_rgb(r, g, b))
+        for (input_node, rgb) in itertools.zip(self.input_layer, img.rgbs_merged):
+            input_node.set_input(rgb)
 
     def output(self):
         return self.output_layer.output()
@@ -233,9 +231,9 @@ def init_net(test_img):
     # Initialize input layer
     input_nodes = []
 
-    for (r, g, b) in test_img.rgbs:
+    for rgb in test_img.rgbs_merged:
         w = init_weight()
-        input_nodes.append(InputNeuron(merge_rgb(r, g, b), w))
+        input_nodes.append(InputNeuron(rgb, w))
 
     # Initialize hidden layer
     hidden_nodes = []
@@ -275,44 +273,70 @@ def back_prop_learning(net, training_set):
     # FIXME: This implementation is really inefficient: We keep calculating same
     # numbers, there's a lot of room for refactoring(maybe memoization).
 
-    for img in training_set:
-        net.set_inputs(map(lambda (r, g, b): merge_rgb(r, g, b), img.rgbs))
+    for (img_idx, img) in enumerate(training_set):
+
+        print "\rProcessing img", img_idx,
+
+        inputs = img.rgbs_merged
+        # print "setting inputs:", inputs
+        net.set_inputs(inputs)
 
         net_output = net.output()
-        print "net output:", net_output
-        expected_output = img.orientation
+        # print "net output:", net_output
+        expected_output = float(img.orientation)
 
         # One output -> one delta
-        delta = sigmoid_prime(net.output_layer.input()) * \
-                expected_output - net_output
+        output_delta = net.output_layer.output_prime() * (expected_output - net_output)
 
-        # (node, weight) pairs
-        # TODO: I should probably refactor classes to make edges double-way, but
-        # this will do for now.
-        hidden_layer_nodes = net.output_layer.inputs
-        hidden_layer_outputs = [ n.output() for (n, _) in hidden_layer_nodes ]
-
-        # Propagate delta to hidden layer
         hidden_layer_deltas = []
-        for (input_node, w) in hidden_layer_nodes:
-            # print "input_node:", input_node
-            # print "w:", w
-            hidden_layer_deltas.append(
-                    sigmoid_prime(input_node.output()) * w * delta)
+        for n in net.hidden_layer:
+            # We know every hidden layer node has exactly one output, so I'm
+            # writing this slightly simplified version
+            hidden_layer_deltas.append(n.output_prime() * n.outputs[0][1] * output_delta)
 
-        # Yet another awful code because of bad implementation.
-        # FIX THIS ALREADY. (we need graph we undirected/two-way edges)
-        input_layer_deltas = {}
-        for (hidden_node, _) in hidden_layer_nodes:
-            for (input_node, w) in hidden_node.inputs:
-                print "not doing nothing"
-                pass
+        input_layer_deltas = []
+        for n in net.input_layer:
+            s = 0
+            for hidden_n_idx in xrange(len(net.hidden_layer)):
+                # WARNING: We require input node's outputs are ordered the same
+                # as net's hidden layer. Awful code.
+                d = hidden_layer_deltas[hidden_n_idx]
+                w = n.outputs[hidden_n_idx][1]
+                s += d * w
+            input_layer_deltas.append(n.output_prime() * s)
 
-
+        #############################################
         # Update every weight in network using deltas
-        pass
 
+        # Input layer
+        for (n_idx, n) in enumerate(net.input_layer):
+            n.input_w += ALPHA * n.input * input_layer_deltas[n_idx]
+            # Resetting output list to be able to add outputs with new weights
+            # below
+            n.outputs = []
 
+        # Hidden layer
+        for (hn_idx, hn) in enumerate(net.hidden_layer):
+            for (hn_input, hn_input_w) in hn.inputs:
+                hn_input_w += ALPHA * hn_input.output() * hidden_layer_deltas[hn_idx]
+                hn_input.outputs.append((hn, hn_input_w))
+
+            # Similarly reset output list here to be able to add correct output
+            # with updated weight below
+            hn.outputs = []
+
+        # Output layer
+        for (output_input, output_input_w) in net.output_layer.inputs:
+            output_input_w += ALPHA * output_input.output() * output_delta
+            output_input.outputs.append((net.output_layer, output_input_w))
+
+    print
+
+def classify(net, test_data):
+    for (img_idx, img) in enumerate(test_data):
+        print "Classifying img", img_idx
+        net.set_inputs(img.rgbs_merged)
+        print "output:", net.output(),
 
 ################################################################################
 # Entry
@@ -342,6 +366,8 @@ if __name__ == "__main__":
     print net
     print "Net output:", net.output()
     print "Done."
-    # print "Testing training."
+    print "Testing training."
+    back_prop_learning(net, train_data)
     # back_prop_learning(net, train_data)
-    # print "Done."
+    classify(net, test_data)
+    print "Done."
