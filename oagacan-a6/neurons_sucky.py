@@ -219,4 +219,3 @@ def classify(net, test_data):
         print "Classifying img", img_idx
         net.set_inputs(img.rgbs_merged)
         print "output:", net.output(),
-
