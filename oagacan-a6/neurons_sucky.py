@@ -1,3 +1,9 @@
+################################################################################
+# This is my first attempt, which failed miserably. The structure is hard to
+# work with, and I forgot to add biases. The back-propagation algorithms follows
+# the definition in Figure 18.24. Ridiculously inefficient.
+################################################################################
+
 import math
 import itertools
 import random
