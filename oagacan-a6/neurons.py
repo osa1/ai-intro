@@ -138,7 +138,7 @@ class Edge:
 
 
 class NeuralNet:
-    def __init__(self, inputs):
+    def __init__(self, inputs, hidden_nodes):
         # Initialize input layer
         self.fixed_input_nodes = []
         self.input_nodes = []
@@ -154,7 +154,7 @@ class NeuralNet:
 
         # Initialize hidden layer
         self.hidden_nodes = []
-        for _ in xrange(inputs):
+        for _ in xrange(hidden_nodes):
             hidden_neuron = Neuron()
             for input_neuron in self.input_nodes:
                 Edge(input_neuron, hidden_neuron)
@@ -240,7 +240,7 @@ def sigmoid_prime(z):
 # Entry
 
 def run_nnet(train_data, test_data, param):
-    net = NeuralNet(len(test_data[0].rgbs_merged))
+    net = NeuralNet(len(test_data[0].rgbs_merged), param)
 
     train_data_ = [ (img.rgbs_merged, img.orientation) for img in train_data ]
 
