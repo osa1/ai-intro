@@ -6,7 +6,9 @@ class Neuron:
     def __init__(self, add_bias=True):
         self.inputs  = []
         if add_bias:
-            self.inputs.append(Edge(Bias(), self))
+            Edge(Bias(), self)
+            # Thanks to my awful design
+            # self.inputs.append(Edge(Bias(), self))
 
         self._outputs = []
 
