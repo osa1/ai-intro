@@ -326,11 +326,11 @@ if __name__ == "__main__":
     print "Testing training."
     # back_prop_learning(net, train_data)
     train_data_w_labels = [ (img.rgbs_merged, img.orientation) for img in train_data ]
-    net.train(train_data_w_labels, 10)
+    #net.train(train_data_w_labels, 10)
     print "Done. Testing classification."
-    print net.output(test_data[0])
+    print net.output(test_data[0].rgbs_merged)
     # # back_prop_learning(net, train_data)
 
     for img_idx, img in enumerate(test_data):
-        print "img", img_idx, net.output(img)
+        print "img", img_idx, net.output(img.rgbs_merged)
     # classify(net, test_data)

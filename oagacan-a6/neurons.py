@@ -163,9 +163,9 @@ class NeuralNet:
         for (node, input) in itertools.izip(self.__fixed_input_nodes, inputs):
             node.set_output(input)
 
-    def output(self, img):
+    def output(self, test_data):
         self.clear_caches()
-        self.set_inputs(img.rgbs_merged)
+        self.set_inputs(test_data)
         return self.__output_node.output()
 
     def clear_caches(self):
