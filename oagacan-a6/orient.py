@@ -319,14 +319,18 @@ if __name__ == "__main__":
     #     result = "(True)" if ret == test.orientation else "(False)"
     #     print "nn:", ret, result
     print "Initializing neural network."
-    net = neurons.NeuralNet(test_data[0])
+    net = neurons.NeuralNet(len(test_data[0].rgbs_merged))
     # print net
     # print "Net output:", net.output(test_data[0])
     # print "Done."
     print "Testing training."
     # back_prop_learning(net, train_data)
-    net.train(train_data, 10)
+    train_data_w_labels = [ (img.rgbs_merged, img.orientation) for img in train_data ]
+    net.train(train_data_w_labels, 10)
     print "Done. Testing classification."
     print net.output(test_data[0])
     # # back_prop_learning(net, train_data)
+
+    for img_idx, img in enumerate(test_data):
+        print "img", img_idx, net.output(img)
     # classify(net, test_data)

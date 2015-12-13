@@ -92,7 +92,7 @@ class Neuron:
 
 
 class FixedOutputNeuron(Neuron):
-    def __init__(self, output):
+    def __init__(self, output=None):
         Neuron.__init__(self, add_bias=False)
         self.__output = output
 
@@ -132,14 +132,14 @@ class Edge:
 
 
 class NeuralNet:
-    def __init__(self, example_img):
+    def __init__(self, inputs):
         # Initialize input layer
         self.__fixed_input_nodes = []
         self.__input_nodes = []
 
-        for rgb in example_img.rgbs_merged:
+        for _ in xrange(inputs):
             input_neuron = Neuron()
-            input = FixedOutputNeuron(rgb)
+            input = FixedOutputNeuron()
             Edge(input, input_neuron)
 
             # self.__input_nodes.append(input_neuron)
@@ -148,7 +148,7 @@ class NeuralNet:
 
         # Initialize hidden layer
         self.__hidden_nodes = []
-        for _ in example_img.rgbs_merged:
+        for _ in xrange(inputs):
             hidden_neuron = Neuron()
             for input_neuron in self.__input_nodes:
                 Edge(input_neuron, hidden_neuron)
@@ -195,15 +195,15 @@ class NeuralNet:
 
         return weights
 
-    def train(self, train_set, iterations, alpha=0.9):
+    def train(self, train_set, iterations, alpha=0.5):
         for i in xrange(iterations):
             print "iteration", (i + 1)
-            for (img_i, img) in enumerate(train_set):
-                print "\rtraining", img_i,
+            for (iter, (input, label)) in enumerate(train_set):
+                print "\rtraining", iter,
                 self.clear_caches()
-                self.set_inputs(img.rgbs_merged)
+                self.set_inputs(input)
                 self.__output_node.output()
-                self.propagate_error(img.orientation)
+                self.propagate_error(label)
                 self.update_weights(alpha)
             print "weights after training:", self.weights()
             print
