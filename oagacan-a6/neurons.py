@@ -77,8 +77,7 @@ class Neuron:
             print "error cache:", self.error_cache
             raise RuntimeError("u suck at programming - 2", self.__class__.__name__)
 
-        # sigmoid_prime = self.output_cache * (1 - self.output_cache)
-        sigmoid_prime = 1.0 - (self.output_cache ** 2)
+        sigmoid_prime = self.output_cache * (1 - self.output_cache)
         for input_idx, input_edge in enumerate(self.inputs):
             diff = alpha * sigmoid_prime * self.error_cache * self.inputs_cache[input_idx]
             # print "update_weights diff:", diff
@@ -226,15 +225,14 @@ class NeuralNet:
 def sigmoid(z):
     """Or Logistic(z) or whatever."""
     # print "sigmoid input:", z
-    # return 1.0 / (1.0 + math.exp(- z))
-    return math.tanh(z)
+    return 1.0 / (1.0 + math.exp(- z))
+    # return math.tanh(z)
 
 # This is currently not used, we cache the output in nodes and directly
 # calculate this instead. (e.g. last_output * (1 - last_output))
 def sigmoid_prime(z):
     """dsigmoid / dz"""
-    s = sigmoid(z)
-    return s * (1 - s)
+    return z * (1 - z)
 
 ################################################################################
 # Entry
